@@ -1,0 +1,61 @@
+id,post_id,text,label
+synthetic-post-01-comment-1,synthetic-post-01,"Về mạng máy tính ở PTIT: mình hài lòng vì được hỗ trợ nhiệt tình và thấy rất hữu ích.",positive
+synthetic-post-01-comment-2,synthetic-post-01,"Về mạng máy tính ở PTIT: thông báo chi tiết được đăng lúc 8 giờ sáng thứ hai.",neutral
+synthetic-post-01-comment-3,synthetic-post-01,"Về mạng máy tính ở PTIT: mình không hài lòng vì chờ quá lâu và rất thất vọng.",negative
+synthetic-post-02-comment-1,synthetic-post-02,"Về cơ sở dữ liệu ở PTIT: mình hài lòng vì được hỗ trợ nhiệt tình và thấy rất hữu ích.",positive
+synthetic-post-02-comment-2,synthetic-post-02,"Về cơ sở dữ liệu ở PTIT: thông báo chi tiết được đăng lúc 8 giờ sáng thứ hai.",neutral
+synthetic-post-02-comment-3,synthetic-post-02,"Về cơ sở dữ liệu ở PTIT: mình không hài lòng vì chờ quá lâu và rất thất vọng.",negative
+synthetic-post-03-comment-1,synthetic-post-03,"Về lập trình Python ở PTIT: mình hài lòng vì được hỗ trợ nhiệt tình và thấy rất hữu ích.",positive
+synthetic-post-03-comment-2,synthetic-post-03,"Về lập trình Python ở PTIT: thông báo chi tiết được đăng lúc 8 giờ sáng thứ hai.",neutral
+synthetic-post-03-comment-3,synthetic-post-03,"Về lập trình Python ở PTIT: mình không hài lòng vì chờ quá lâu và rất thất vọng.",negative
+synthetic-post-04-comment-1,synthetic-post-04,"Về thư viện ở PTIT: mình hài lòng vì được hỗ trợ nhiệt tình và thấy rất hữu ích.",positive
+synthetic-post-04-comment-2,synthetic-post-04,"Về thư viện ở PTIT: thông báo chi tiết được đăng lúc 8 giờ sáng thứ hai.",neutral
+synthetic-post-04-comment-3,synthetic-post-04,"Về thư viện ở PTIT: mình không hài lòng vì chờ quá lâu và rất thất vọng.",negative
+synthetic-post-05-comment-1,synthetic-post-05,"Về phòng thực hành ở PTIT: mình hài lòng vì được hỗ trợ nhiệt tình và thấy rất hữu ích.",positive
+synthetic-post-05-comment-2,synthetic-post-05,"Về phòng thực hành ở PTIT: thông báo chi tiết được đăng lúc 8 giờ sáng thứ hai.",neutral
+synthetic-post-05-comment-3,synthetic-post-05,"Về phòng thực hành ở PTIT: mình không hài lòng vì chờ quá lâu và rất thất vọng.",negative
+synthetic-post-06-comment-1,synthetic-post-06,"Về cổng đăng ký học ở PTIT: mình hài lòng vì được hỗ trợ nhiệt tình và thấy rất hữu ích.",positive
+synthetic-post-06-comment-2,synthetic-post-06,"Về cổng đăng ký học ở PTIT: thông báo chi tiết được đăng lúc 8 giờ sáng thứ hai.",neutral
+synthetic-post-06-comment-3,synthetic-post-06,"Về cổng đăng ký học ở PTIT: mình không hài lòng vì chờ quá lâu và rất thất vọng.",negative
+synthetic-post-07-comment-1,synthetic-post-07,"Về lịch thi ở PTIT: mình hài lòng vì được hỗ trợ nhiệt tình và thấy rất hữu ích.",positive
+synthetic-post-07-comment-2,synthetic-post-07,"Về lịch thi ở PTIT: thông báo chi tiết được đăng lúc 8 giờ sáng thứ hai.",neutral
+synthetic-post-07-comment-3,synthetic-post-07,"Về lịch thi ở PTIT: mình không hài lòng vì chờ quá lâu và rất thất vọng.",negative
+synthetic-post-08-comment-1,synthetic-post-08,"Về học phí ở PTIT: mình hài lòng vì được hỗ trợ nhiệt tình và thấy rất hữu ích.",positive
+synthetic-post-08-comment-2,synthetic-post-08,"Về học phí ở PTIT: thông báo chi tiết được đăng lúc 8 giờ sáng thứ hai.",neutral
+synthetic-post-08-comment-3,synthetic-post-08,"Về học phí ở PTIT: mình không hài lòng vì chờ quá lâu và rất thất vọng.",negative
+synthetic-post-09-comment-1,synthetic-post-09,"Về câu lạc bộ ở PTIT: mình hài lòng vì được hỗ trợ nhiệt tình và thấy rất hữu ích.",positive
+synthetic-post-09-comment-2,synthetic-post-09,"Về câu lạc bộ ở PTIT: thông báo chi tiết được đăng lúc 8 giờ sáng thứ hai.",neutral
+synthetic-post-09-comment-3,synthetic-post-09,"Về câu lạc bộ ở PTIT: mình không hài lòng vì chờ quá lâu và rất thất vọng.",negative
+synthetic-post-10-comment-1,synthetic-post-10,"Về ngày hội việc làm ở PTIT: mình hài lòng vì được hỗ trợ nhiệt tình và thấy rất hữu ích.",positive
+synthetic-post-10-comment-2,synthetic-post-10,"Về ngày hội việc làm ở PTIT: thông báo chi tiết được đăng lúc 8 giờ sáng thứ hai.",neutral
+synthetic-post-10-comment-3,synthetic-post-10,"Về ngày hội việc làm ở PTIT: mình không hài lòng vì chờ quá lâu và rất thất vọng.",negative
+synthetic-post-11-comment-1,synthetic-post-11,"Về ký túc xá ở PTIT: mình hài lòng vì được hỗ trợ nhiệt tình và thấy rất hữu ích.",positive
+synthetic-post-11-comment-2,synthetic-post-11,"Về ký túc xá ở PTIT: thông báo chi tiết được đăng lúc 8 giờ sáng thứ hai.",neutral
+synthetic-post-11-comment-3,synthetic-post-11,"Về ký túc xá ở PTIT: mình không hài lòng vì chờ quá lâu và rất thất vọng.",negative
+synthetic-post-12-comment-1,synthetic-post-12,"Về căng tin ở PTIT: mình hài lòng vì được hỗ trợ nhiệt tình và thấy rất hữu ích.",positive
+synthetic-post-12-comment-2,synthetic-post-12,"Về căng tin ở PTIT: thông báo chi tiết được đăng lúc 8 giờ sáng thứ hai.",neutral
+synthetic-post-12-comment-3,synthetic-post-12,"Về căng tin ở PTIT: mình không hài lòng vì chờ quá lâu và rất thất vọng.",negative
+synthetic-post-13-comment-1,synthetic-post-13,"Về wifi khu học tập ở PTIT: mình hài lòng vì được hỗ trợ nhiệt tình và thấy rất hữu ích.",positive
+synthetic-post-13-comment-2,synthetic-post-13,"Về wifi khu học tập ở PTIT: thông báo chi tiết được đăng lúc 8 giờ sáng thứ hai.",neutral
+synthetic-post-13-comment-3,synthetic-post-13,"Về wifi khu học tập ở PTIT: mình không hài lòng vì chờ quá lâu và rất thất vọng.",negative
+synthetic-post-14-comment-1,synthetic-post-14,"Về môn xác suất ở PTIT: mình hài lòng vì được hỗ trợ nhiệt tình và thấy rất hữu ích.",positive
+synthetic-post-14-comment-2,synthetic-post-14,"Về môn xác suất ở PTIT: thông báo chi tiết được đăng lúc 8 giờ sáng thứ hai.",neutral
+synthetic-post-14-comment-3,synthetic-post-14,"Về môn xác suất ở PTIT: mình không hài lòng vì chờ quá lâu và rất thất vọng.",negative
+synthetic-post-15-comment-1,synthetic-post-15,"Về đồ án nhóm ở PTIT: mình hài lòng vì được hỗ trợ nhiệt tình và thấy rất hữu ích.",positive
+synthetic-post-15-comment-2,synthetic-post-15,"Về đồ án nhóm ở PTIT: thông báo chi tiết được đăng lúc 8 giờ sáng thứ hai.",neutral
+synthetic-post-15-comment-3,synthetic-post-15,"Về đồ án nhóm ở PTIT: mình không hài lòng vì chờ quá lâu và rất thất vọng.",negative
+synthetic-post-16-comment-1,synthetic-post-16,"Về buổi tư vấn ở PTIT: mình hài lòng vì được hỗ trợ nhiệt tình và thấy rất hữu ích.",positive
+synthetic-post-16-comment-2,synthetic-post-16,"Về buổi tư vấn ở PTIT: thông báo chi tiết được đăng lúc 8 giờ sáng thứ hai.",neutral
+synthetic-post-16-comment-3,synthetic-post-16,"Về buổi tư vấn ở PTIT: mình không hài lòng vì chờ quá lâu và rất thất vọng.",negative
+synthetic-post-17-comment-1,synthetic-post-17,"Về môn tiếng Anh ở PTIT: mình hài lòng vì được hỗ trợ nhiệt tình và thấy rất hữu ích.",positive
+synthetic-post-17-comment-2,synthetic-post-17,"Về môn tiếng Anh ở PTIT: thông báo chi tiết được đăng lúc 8 giờ sáng thứ hai.",neutral
+synthetic-post-17-comment-3,synthetic-post-17,"Về môn tiếng Anh ở PTIT: mình không hài lòng vì chờ quá lâu và rất thất vọng.",negative
+synthetic-post-18-comment-1,synthetic-post-18,"Về hệ thống học trực tuyến ở PTIT: mình hài lòng vì được hỗ trợ nhiệt tình và thấy rất hữu ích.",positive
+synthetic-post-18-comment-2,synthetic-post-18,"Về hệ thống học trực tuyến ở PTIT: thông báo chi tiết được đăng lúc 8 giờ sáng thứ hai.",neutral
+synthetic-post-18-comment-3,synthetic-post-18,"Về hệ thống học trực tuyến ở PTIT: mình không hài lòng vì chờ quá lâu và rất thất vọng.",negative
+synthetic-post-19-comment-1,synthetic-post-19,"Về hoạt động tình nguyện ở PTIT: mình hài lòng vì được hỗ trợ nhiệt tình và thấy rất hữu ích.",positive
+synthetic-post-19-comment-2,synthetic-post-19,"Về hoạt động tình nguyện ở PTIT: thông báo chi tiết được đăng lúc 8 giờ sáng thứ hai.",neutral
+synthetic-post-19-comment-3,synthetic-post-19,"Về hoạt động tình nguyện ở PTIT: mình không hài lòng vì chờ quá lâu và rất thất vọng.",negative
+synthetic-post-20-comment-1,synthetic-post-20,"Về khóa học hè ở PTIT: mình hài lòng vì được hỗ trợ nhiệt tình và thấy rất hữu ích.",positive
+synthetic-post-20-comment-2,synthetic-post-20,"Về khóa học hè ở PTIT: thông báo chi tiết được đăng lúc 8 giờ sáng thứ hai.",neutral
+synthetic-post-20-comment-3,synthetic-post-20,"Về khóa học hè ở PTIT: mình không hài lòng vì chờ quá lâu và rất thất vọng.",negative

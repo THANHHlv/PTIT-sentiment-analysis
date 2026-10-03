@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+data/raw/*
+data/labeled/*
+data/splits/*
+!**/.gitkeep
+!data/labeled/template.csv
+artifacts/*
+outputs/*
+!artifacts/.gitkeep
+!outputs/.gitkeep
+tools/vncorenlp/
+.cache/

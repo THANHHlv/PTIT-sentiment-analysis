@@ -1,0 +1,20 @@
+split:
+  ratios: [0.70, 0.15, 0.15]
+  seed: 42
+  attempts: 2000
+preprocessing:
+  lowercase: true
+  replace_urls: true
+  expand_slang: true
+  emoji: keep   # keep / remove / map; mặc định giữ sắc thái
+  stop_words: []
+  tokenizer: underthesea
+vectorizer:
+  min_df: 1
+  max_df: 1.0
+  max_features: 20000
+grid:
+  ngram_range: [[1, 1], [1, 2]]
+  nb_alpha: [0.5, 1.0]
+  svm_c: [0.5, 1.0]
+seed: 42
