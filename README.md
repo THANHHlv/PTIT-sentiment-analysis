@@ -28,18 +28,18 @@ Chỉ trình bày điểm số ở mục kiểm tra minh họa, không coi là k
 
 ## Dữ liệu và bộ chia hiện tại
 
-Nguồn chính: `data/raw/ptit_sources_v1/comments.csv`, 2.864 dòng từ 453 bài;
+Nguồn gốc đã lưu trong ZIP riêng: `data/raw/ptit_sources_v1/comments.csv`, 2.864 dòng từ 453 bài;
 2.377 dòng ptit_2k5 và 487 dòng ptit_group_584397217391365.
-Dữ liệu đã gán: `data/labeled/labeled_comments.csv`; câu chưa xác định:
-hồ sơ unresolved, kiểm tra mẫu và phân công người đã được lưu trong ZIP khôi phục riêng ngoài data.
+Dữ liệu đang dùng: `data/labeled/labeled_comments.csv` và ba CSV trong `data/splits/`.
+Unresolved, excluded, mẫu kiểm tra và phân công người chỉ còn trong ZIP hồ sơ riêng.
 Lệnh ghép nhãn người và quy tắc sửa/xác nhận nằm trong docs/annotation_review.md.
 
 ```powershell
 $python = ".\.venv\Scripts\python.exe"
 & $python scripts/verify_ai_dataset.py
 & $python -m ptit_sentiment.data.validate --input data/labeled/labeled_comments.csv
-# Chỉ tái tạo khi cần; thư mục đích phải chưa có bộ chia:
-& $python -m ptit_sentiment.data.ai_dataset --directory data/labeled --output-dir data/splits/ai_initial_v2 --seed 42
+# Đóng gói bộ tối giản; chọn tên ZIP chưa tồn tại:
+& $python scripts/package_team_data.py --output handoff/minimal_ai_dataset_new.zip
 ```
 
 
