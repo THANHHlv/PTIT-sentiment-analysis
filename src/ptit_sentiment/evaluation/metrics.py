@@ -62,6 +62,10 @@ def export_evaluation(output_dir, predictions, metadata):
         output_dir / "metrics.csv", index=False, encoding="utf-8")
     pd.DataFrame.from_dict(metrics["per_label"], orient="index").rename_axis("label").to_csv(
         output_dir / "per_label.csv", encoding="utf-8")
+    classification = pd.DataFrame.from_dict(metrics["per_label"], orient="index").rename_axis("label")
+    classification.loc["macro_avg"] = [metrics["macro_precision"], metrics["macro_recall"],
+                                        metrics["macro_f1"], metrics["n_samples"]]
+    classification.to_csv(output_dir / "classification_report.csv", encoding="utf-8")
     predictions.to_csv(output_dir / "predictions.csv", index=False, encoding="utf-8")
     predictions.loc[predictions["true_label"] != predictions["predicted_label"]].to_csv(
         output_dir / "errors.csv", index=False, encoding="utf-8")

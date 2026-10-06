@@ -1,7 +1,9 @@
 checkpoint: vinai/phobert-base
-revision: main  # Ghim commit cụ thể trước thực nghiệm chính thức.
+revision: 01daacda68afe13d83023d16ec647239e344a1e6  # Checkpoint đã kiểm chứng.
 max_length: 256
 segmenter_dir: tools/vncorenlp
+mask_sensitive: true
+local_files_only: false
 seed: 42
 training:
   num_train_epochs: 3
