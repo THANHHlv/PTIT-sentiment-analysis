@@ -10,8 +10,16 @@ EMOJI_WORDS = {"😊": " vui ", "😍": " yêu thích ", "👍": " tán thành "
 EMOJI_PATTERN = re.compile("[\U0001F000-\U0001FAFF\u2600-\u27BF\uFE0F\u200D]")
 
 
+def _replace_url(match):
+    """Replace a URL while retaining punctuation immediately after it."""
+    value = match.group()
+    return " urltoken " + value[len(value.rstrip(".,!?;:")):]
+
+
 def basic_normalize(text):
     """NFC và khoảng trắng; dùng riêng trước RDRSegmenter của PhoBERT."""
+    if not isinstance(text, str):
+        raise TypeError("text phải là chuỗi Unicode.")
     text = unicodedata.normalize("NFC", text)
     text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\ufffd]", " ", text)
     text = text.replace("\ufeff", "").replace("\u200b", "")
@@ -33,7 +41,7 @@ def normalize_text(text, lowercase=True, replace_urls=True, expand_slang=True, e
     if lowercase:
         text = text.lower()
     if replace_urls:
-        text = re.sub(r"https?://\S+|www\.\S+", " urltoken ", text, flags=re.IGNORECASE)
+        text = re.sub(r"https?://\S+|www\.\S+", _replace_url, text, flags=re.IGNORECASE)
     if expand_slang:
         mapping = SLANG if slang_map is None else slang_map
         if not isinstance(mapping, dict) or not all(isinstance(k, str) and isinstance(v, str) for k, v in mapping.items()):
