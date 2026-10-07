@@ -27,7 +27,7 @@ def compare_results(inputs, output):
     if not rows:
         raise ValueError("Không có metrics.json; phải chạy evaluate trước.")
     output = Path(output)
-    if output.exists() or output.with_suffix(".json").exists():
+    if any(output.with_suffix(ext).exists() for ext in (".csv", ".json", ".png")):
         raise ValueError("Bảng so sánh đã tồn tại; chọn --output mới.")
     output.parent.mkdir(parents=True, exist_ok=True)
     table = pd.DataFrame(rows).sort_values("macro_f1", ascending=False, kind="stable")
@@ -35,6 +35,17 @@ def compare_results(inputs, output):
     write_json(output.with_suffix(".json"), {"evaluation_signature": list(signature),
                                             "models": table.to_dict(orient="records"),
                                             "sources": [str(path) for path in inputs]})
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    axis = table.set_index("model_name")[["accuracy", "macro_f1"]].plot.bar(
+        figsize=(9, 5), ylim=(0, 1.1), rot=20)
+    axis.set_ylabel("Điểm")
+    axis.set_xlabel("Mô hình")
+    axis.set_title(f"So sánh trên {signature[2]} — {signature[3]}")
+    axis.figure.tight_layout()
+    axis.figure.savefig(output.with_suffix(".png"), dpi=160)
+    plt.close(axis.figure)
     return table
 
 

@@ -19,7 +19,7 @@ from ptit_sentiment.preprocessing.tokenize import TextPreprocessor
 
 class ContractsTest(unittest.TestCase):
     def setUp(self):
-        self.frame = read_csv("data/examples/synthetic.csv")
+        self.frame = read_csv("tests/fixtures/synthetic.csv")
 
     def test_reproducible_groups_and_disjoint_text(self):
         first, second = grouped_split(self.frame), grouped_split(self.frame)
@@ -51,7 +51,7 @@ class ContractsTest(unittest.TestCase):
 
     def test_manifest_tampering(self):
         with tempfile.TemporaryDirectory() as directory:
-            save_splits("data/examples/synthetic.csv", directory, [0.7, 0.15, 0.15], 42, 100, "synthetic")
+            save_splits("tests/fixtures/synthetic.csv", directory, [0.7, 0.15, 0.15], 42, 100, "synthetic")
             path = Path(directory) / "test.csv"
             path.write_bytes(path.read_bytes() + b"\n")
             with self.assertRaisesRegex(ValueError, "đã đổi"):
@@ -143,7 +143,7 @@ class ContractsTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             splits = root / "splits"
-            save_splits("data/examples/synthetic.csv", splits, [0.7, 0.15, 0.15], 42, 100, "synthetic")
+            save_splits("tests/fixtures/synthetic.csv", splits, [0.7, 0.15, 0.15], 42, 100, "synthetic")
             model = root / "baseline.joblib"
             joblib.dump(fit_baseline(self.frame["text"].tolist(), self.frame["label"].tolist()), model)
             write_json(model.with_suffix(".metadata.json"), {
@@ -151,6 +151,30 @@ class ContractsTest(unittest.TestCase):
                 "kind": "classical", "model_name": "baseline", "baseline": True})
             with self.assertRaisesRegex(ValueError, "khác bộ chia"):
                 evaluate_model(model, splits, root / "evaluation")
+
+
+    def test_sensitive_controls_and_configurable_slang(self):
+        raw = "SV iu bài học\x00 mail a@example.com gọi 0912345678 @test"
+        cleaned = normalize_text(raw, slang_map={"iu": "yêu"})
+        self.assertIn("yêu", cleaned)
+        self.assertIn("emailtoken", cleaned)
+        self.assertIn("phonetoken", cleaned)
+        self.assertIn("usertoken", cleaned)
+        self.assertNotIn("a@example.com", cleaned)
+        self.assertNotIn("\x00", cleaned)
+        self.assertIn("SV", raw)
+
+    def test_truncation_boundary_and_counts(self):
+        from ptit_sentiment.preprocessing.phobert_input import encode_with_statistics
+        class Tokenizer:
+            truncation_side = "right"
+            def __call__(self, texts, truncation=False, max_length=None, **kwargs):
+                rows = [[0] + list(range(len(text.split()))) + [2] for text in texts]
+                return {"input_ids": [row[:max_length] if truncation else row for row in rows]}
+        encoding, stats = encode_with_statistics(Tokenizer(), ["a b", "a b c"], 4)
+        self.assertEqual(stats["truncated_count"], 1)
+        self.assertEqual(stats["truncated_samples"], [{"index": 1, "original_tokens": 5}])
+        self.assertEqual([len(row) for row in encoding["input_ids"]], [4, 4])
 
 
 if __name__ == "__main__":

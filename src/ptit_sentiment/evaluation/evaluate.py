@@ -21,6 +21,7 @@ def evaluate_model(model_path, splits_dir, output_dir, split="test", segmenter_d
         "provenance": manifest["provenance"], "split_manifest_sha256": split_hash,
         "evaluation_data_sha256": file_hash(Path(splits_dir) / f"{split}.csv"),
         "artifact": str(Path(model_path).resolve()),
+        "truncation": getattr(model, "truncation_stats", None),
     })
 
 

@@ -74,3 +74,20 @@ Confusion matrix hàng thật, cột dự đoán. Baseline và mọi mô hình c
 Không suy ra chất lượng tổng quát từ dữ liệu tổng hợp.
 Phân tích errors.csv: phủ định, slang, mỉa mai, hỗn hợp, thiếu ngữ cảnh, tách từ, truncation, nhãn nghi vấn.
 Không sửa test theo dự đoán để nâng điểm.
+
+## Bổ sung tiền xử lý và kiểm chứng
+
+Bảng slang_map trong classical.yaml thay thế toàn bộ mapping mặc định nếu được truyền vào;
+mapping rỗng {} nghĩa là không có thay thế tiếng lóng. expand_slang=false tắt bước này.
+mask_sensitive=true che email/điện thoại VN/@handle bằng emailtoken/phonetoken/usertoken.
+basic_normalize loại BOM, zero-width-space; ký tự điều khiển và U+FFFD đổi thành khoảng trắng.
+Không đoán lại nội dung đã mất do mã hóa sai; nguồn lỗi nặng cần được người 1 xem xét.
+
+PhoBERT có cùng tùy chọn che thông tin nhạy cảm, nhưng không lowercase/thay URL/mở rộng slang.
+preprocessing/phobert_input.py đo độ dài gồm special tokens trước truncation bên phải.
+Nếu phần kết luận cảm xúc nằm cuối, cắt văn bản có thể đổi thông tin mô hình nhìn thấy;
+phải báo tỷ lệ mẫu bị cắt theo từng tập thực nghiệm.
+configs/phobert_smoke.yaml là kiểm tra một bước trên đúng checkpoint;
+không được dùng điểm smoke để so chất lượng với mô hình đã huấn luyện đầy đủ.
+
+Bản báo cáo chính nằm ở report/report.md; số liệu minh họa truy vết được về report/evidence/evidence.json.

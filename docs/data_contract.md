@@ -1,5 +1,13 @@
 # Hợp đồng dữ liệu và giao tiếp
 
+> Cập nhật 07/10/2026: data đã thu gọn, chỉ còn labeled_comments.csv và
+> train/validation/test cùng manifest.json chứa metadata nhúng. Hồ sơ gán
+> nhãn, dữ liệu thô, unresolved/excluded đã lưu riêng trong
+> outputs/archives/data_minimal_20261007.zip. Các đường dẫn hồ sơ/batch trong
+> nội dung lịch sử dưới đây chỉ dùng sau khi khôi phục ZIP, không có trong
+> data hiện tại. Kiểm tra bộ đang dùng bằng scripts/verify_ai_dataset.py;
+> đóng gói bằng scripts/package_team_data.py. Fixture ở tests/fixtures/.
+
 ## CSV đầu vào
 
 CSV UTF-8 (chấp nhận BOM), header id,post_id,text,label. Mỗi dòng một bình luận.
@@ -50,3 +58,22 @@ predictions.csv, errors.csv. JSON có label order, hàng thật/cột dự đoá
 Macro-P/R/F1, accuracy, provenance, hash bộ chia/dữ liệu.
 Metric không xác định được tính 0 (zero_division=0).
 Compare chỉ tổng hợp metrics.json đã chạy, không tự thêm mô hình chưa chạy.
+
+## Bổ sung phiên bản hoàn thiện
+
+classification_report.csv chứa P/R/F1/support từng nhãn và dòng macro_avg;
+per_label.csv vẫn giữ để tương thích. Compare xuất thêm PNG cạnh CSV/JSON.
+Thông tin nhạy cảm được che trong bản xử lý theo mask_sensitive, không sửa text nguồn.
+Regex nhận email, số điện thoại VN và @handle; không đảm bảo ẩn danh tên người/địa chỉ.
+Dữ liệu thật và CSV predictions/errors phải được rà soát trước chia sẻ.
+PhoBERT lưu truncation.json cho train/validation; metrics.json có trường truncation khi evaluate.
+Predict PhoBERT với --output ghi thêm <tên>.truncation.json.
+
+## Hợp đồng nhập và xác nhận dữ liệu thật
+
+Nguồn thô `comments.csv` có thêm source_id/source_url/collected_at, không lưu tên tác giả.
+`collection_report.json` truy vết hash, checkpoint, loại/trùng và lỗi nguồn.
+Bảng gán nhãn có role/suggested_label/label/confirmed/notes; chỉ label được người xác nhận mới ghép.
+`labeling_report.json` status=confirmed, provenance=real và labeled_sha256 phải khớp CSV
+khi chia thật. Manifest bộ chia lưu bản báo cáo/hash; train và evaluate xác minh lại chúng.
+Các cột gợi ý không đi vào nhãn chuẩn. Xem [quy trình](real_data_workflow.md).

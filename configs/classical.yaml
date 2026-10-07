@@ -6,6 +6,8 @@ preprocessing:
   lowercase: true
   replace_urls: true
   expand_slang: true
+  mask_sensitive: true
+  slang_map: {ko: "không", k: "không", khum: "không", hok: "không", dc: "được", đc: "được", mn: "mọi người", sv: "sinh viên"}
   emoji: keep   # keep / remove / map; mặc định giữ sắc thái
   stop_words: []
   tokenizer: underthesea

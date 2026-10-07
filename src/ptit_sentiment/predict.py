@@ -5,7 +5,7 @@ from pathlib import Path
 import joblib
 import pandas as pd
 
-from ptit_sentiment.common import read_json, run_cli
+from ptit_sentiment.common import read_json, run_cli, write_json
 from ptit_sentiment.data.validate import read_csv
 from ptit_sentiment.evaluation.metrics import prediction_frame
 from ptit_sentiment.labels import LABELS, LABEL_TO_ID
@@ -69,6 +69,8 @@ def main():
         path = Path(args.output)
         path.parent.mkdir(parents=True, exist_ok=True)
         result.to_csv(path, index=False, encoding="utf-8")
+        if metadata["kind"] == "phobert":
+            write_json(path.with_suffix(".truncation.json"), model.truncation_stats)
         print(f"Đã lưu {len(result)} dự đoán: {path}")
     else:
         print(result.to_json(orient="records", force_ascii=False))

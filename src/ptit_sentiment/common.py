@@ -36,9 +36,10 @@ def file_hash(path):
 
 def environment_versions():
     """Ghi phiên bản thực tế, không import thư viện mô hình nặng."""
-    result = {}
+    import platform
+    result = {"python": platform.python_version()}
     for package in ("ptit-sentiment", "scikit-learn", "pandas", "numpy", "underthesea",
-                    "transformers", "torch", "py-vncorenlp"):
+                    "transformers", "accelerate", "torch", "py-vncorenlp", "joblib", "matplotlib", "PyYAML"):
         try:
             result[package] = version(package)
         except PackageNotFoundError:
