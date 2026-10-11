@@ -7,8 +7,8 @@ preprocessing:
   replace_urls: true
   expand_slang: true
   mask_sensitive: true
-  slang_map: {ko: "không", k: "không", khum: "không", hok: "không", dc: "được", đc: "được", mn: "mọi người", sv: "sinh viên"}
-  emoji: keep   # keep / remove / map; mặc định giữ sắc thái
+  slang_map: {ko: "không", khum: "không", hok: "không"} # k/dc/đc/mn/sv cần rà ngữ cảnh
+  emoji: keep   # keep / keep_and_map / map / remove
   stop_words: []
   tokenizer: underthesea
 vectorizer:
@@ -17,6 +17,9 @@ vectorizer:
   max_features: 20000
 grid:
   ngram_range: [[1, 1], [1, 2]]
+  # (1, 3) chỉ thử khi train đủ lớn và validation cho thấy có ích.
+  emoji: [keep, keep_and_map]
+  svm_class_weight: [null, balanced]
   nb_alpha: [0.5, 1.0]
   svm_c: [0.5, 1.0]
 seed: 42
