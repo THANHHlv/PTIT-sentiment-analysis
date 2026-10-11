@@ -35,6 +35,9 @@ def validate_frame(frame, labeled=True):
         empty = frame[col].str.strip().eq("")
         if empty.any():
             raise ValueError(f"Cột {col} rỗng tại dòng CSV {(frame.index[empty] + 2).tolist()[:10]}.")
+    broken = frame["text"].str.contains("\ufffd", regex=False)
+    if broken.any():
+        raise ValueError(f"Text chứa ký tự thay thế U+FFFD tại dòng CSV {(frame.index[broken] + 2).tolist()[:10]}; kiểm tra lại file nguồn UTF-8.")
     if frame["id"].str.strip().ne(frame["id"]).any():
         raise ValueError("id không được có khoảng trắng đầu/cuối.")
     if labeled and frame["post_id"].str.strip().ne(frame["post_id"]).any():

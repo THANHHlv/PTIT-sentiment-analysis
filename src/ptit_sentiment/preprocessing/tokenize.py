@@ -34,6 +34,11 @@ class TextPreprocessor(TransformerMixin, BaseEstimator):
         return self
 
     def _stop_set(self):
+        if self.stop_words is not None and (
+            not isinstance(self.stop_words, (list, tuple, set))
+            or any(not isinstance(word, str) for word in self.stop_words)
+        ):
+            raise ValueError("stop_words phải là danh sách các chuỗi.")
         words = {word.casefold().replace(" ", "_") for word in (self.stop_words or [])}
         if any(any(part in NEGATIONS for part in word.split("_")) for word in words):
             raise ValueError("Stop words không được loại từ/cụm chứa phủ định không/chưa/chẳng/chả/đừng.")

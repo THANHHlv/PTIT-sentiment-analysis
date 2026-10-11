@@ -2,16 +2,23 @@
 import re
 import unicodedata
 
-SLANG = {"ko": "không", "k": "không", "khum": "không", "hok": "không",
-         "dc": "được", "đc": "được", "mn": "mọi người", "sv": "sinh viên"}
+SLANG = {"ko": "không", "khum": "không", "hok": "không"}
 NEGATIONS = frozenset({"không", "chưa", "chẳng", "chả", "đừng"})
 EMOJI_WORDS = {"😊": " vui ", "😍": " yêu thích ", "👍": " tán thành ",
                "😢": " buồn ", "😡": " tức giận ", "👎": " không thích "}
 EMOJI_PATTERN = re.compile("[\U0001F000-\U0001FAFF\u2600-\u27BF\uFE0F\u200D]")
 
 
+def _replace_url(match):
+    """Replace a URL while retaining punctuation immediately after it."""
+    value = match.group()
+    return " urltoken " + value[len(value.rstrip(".,!?;:")):]
+
+
 def basic_normalize(text):
     """NFC và khoảng trắng; dùng riêng trước RDRSegmenter của PhoBERT."""
+    if not isinstance(text, str):
+        raise TypeError("text phải là chuỗi Unicode.")
     text = unicodedata.normalize("NFC", text)
     text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\ufffd]", " ", text)
     text = text.replace("\ufeff", "").replace("\u200b", "")
@@ -33,17 +40,17 @@ def normalize_text(text, lowercase=True, replace_urls=True, expand_slang=True, e
     if lowercase:
         text = text.lower()
     if replace_urls:
-        text = re.sub(r"https?://\S+|www\.\S+", " urltoken ", text, flags=re.IGNORECASE)
+        text = re.sub(r"https?://\S+|www\.\S+", _replace_url, text, flags=re.IGNORECASE)
     if expand_slang:
         mapping = SLANG if slang_map is None else slang_map
         if not isinstance(mapping, dict) or not all(isinstance(k, str) and isinstance(v, str) for k, v in mapping.items()):
             raise ValueError("slang_map phải là bảng chuỗi -> chuỗi.")
         text = re.sub(r"\b\w+\b", lambda match: mapping.get(match.group().lower(), match.group()), text)
-    if emoji == "map":
+    if emoji in ("map", "keep_and_map"):
         for symbol, word in EMOJI_WORDS.items():
-            text = text.replace(symbol, word)
+            text = text.replace(symbol, (symbol if emoji == "keep_and_map" else "") + word)
     elif emoji == "remove":
         text = EMOJI_PATTERN.sub(" ", text)
     elif emoji != "keep":
-        raise ValueError("emoji phải là keep, map hoặc remove.")
+        raise ValueError("emoji phải là keep, keep_and_map, map hoặc remove.")
     return " ".join(text.split())
