@@ -9,9 +9,18 @@ from sklearn.pipeline import Pipeline
 from ptit_sentiment.preprocess import normalize_text
 from ptit_sentiment.preprocess import TextPreprocessor
 from ptit_sentiment.features import make_vectorizer
+from ptit_sentiment.features.vectorizers import make_tfidf_word_char
 
 
 class NormalizationTests(unittest.TestCase):
+    def test_dataset_rejects_replacement_character_without_guessing_text(self):
+        import pandas as pd
+        from ptit_sentiment.data.validate import validate_frame
+
+        frame = pd.DataFrame([{"id": "1", "post_id": "p1", "text": "lịch h�c", "label": "neutral"}])
+        with self.assertRaisesRegex(ValueError, "U\\+FFFD"):
+            validate_frame(frame)
+
     def test_whitespace_broken_character_and_url_punctuation(self):
         self.assertEqual(
             normalize_text("  Chưa\ufffd ổn\twww.example.org!  "),
@@ -19,7 +28,11 @@ class NormalizationTests(unittest.TestCase):
         )
 
     def test_slang_negation_and_emoji_are_preserved(self):
-        self.assertEqual(normalize_text("SV ko thích 😢"), "sinh viên không thích 😢")
+        self.assertEqual(normalize_text("SV ko thích 😢"), "sv không thích 😢")
+
+    def test_ambiguous_slang_and_emoji_expansion(self):
+        self.assertEqual(normalize_text("k mn sv dc 😢", emoji="keep_and_map"),
+                         "k mn sv dc 😢 buồn")
 
     def test_invalid_text_has_clear_error(self):
         with self.assertRaisesRegex(TypeError, "chuỗi Unicode"):
@@ -31,8 +44,8 @@ class TokenizationTests(unittest.TestCase):
         fake = SimpleNamespace(word_tokenize=lambda text, format: text.replace("sinh viên", "sinh_viên"))
         with patch.dict(sys.modules, {"underthesea": fake}):
             processor = TextPreprocessor().fit(["SV ko thích"])
-            self.assertEqual(processor.transform(["SV ko thích"]), ["sinh_viên không thích"])
-            self.assertEqual(processor.transform(["SV ko thích"]), ["sinh_viên không thích"])
+            self.assertEqual(processor.transform(["SV ko thích"]), ["sv không thích"])
+            self.assertEqual(processor.transform(["SV ko thích"]), ["sv không thích"])
 
     def test_negation_cannot_be_stop_word(self):
         with self.assertRaisesRegex(ValueError, "phủ định"):
@@ -50,6 +63,54 @@ class FeatureTests(unittest.TestCase):
         self.assertIn("không tốt", vectorizer.vocabulary_)
         self.assertIn("rất tốt", vectorizer.vocabulary_)
         self.assertEqual(matrix.shape[0], 2)
+
+    def test_trigram_keeps_negation_context(self):
+        vectorizer = make_vectorizer("tfidf", (1, 3))
+        vectorizer.fit(["chưa thật sự tốt", "rất tốt"])
+        self.assertIn("chưa thật sự", vectorizer.vocabulary_)
+        self.assertIn("chưa thật sự", vectorizer.vocabulary_)
+        self.assertIn("thật sự tốt", vectorizer.vocabulary_)
+
+    def test_word_char_features_fit_only_train(self):
+        features = make_tfidf_word_char((1, 2), min_df=1, max_features=100)
+        train = features.fit_transform(["không thích", "rất thích"])
+        word_vocab = dict(features.transformer_list[0][1].vocabulary_)
+        char_vocab = dict(features.transformer_list[1][1].vocabulary_)
+        test = features.transform(["chưa thích"])
+        self.assertEqual(train.shape[1], test.shape[1])
+        self.assertEqual(word_vocab, features.transformer_list[0][1].vocabulary_)
+        self.assertEqual(char_vocab, features.transformer_list[1][1].vocabulary_)
+        self.assertNotIn("chưa", word_vocab)
+
+    def test_word_char_pipeline_roundtrip(self):
+        import io
+        import joblib
+        from ptit_sentiment.models.classical import make_pipeline
+
+        fake = SimpleNamespace(word_tokenize=lambda text, format: text)
+        config = {"preprocessing": {}, "vectorizer": {"min_df": 1}, "seed": 42}
+        with patch.dict(sys.modules, {"underthesea": fake}):
+            pipeline = make_pipeline("tfidf", "svm", config, (1, 2), 1.0,
+                                     tfidf_mode="word_char", class_weight="balanced")
+            pipeline.fit(["không thích", "rất thích", "chưa ổn", "quá tốt"],
+                         ["negative", "positive", "negative", "positive"])
+            expected = pipeline.predict(["không thích", "quá tốt"]).tolist()
+            stream = io.BytesIO()
+            joblib.dump(pipeline, stream)
+            stream.seek(0)
+            self.assertEqual(joblib.load(stream).predict(["không thích", "quá tốt"]).tolist(), expected)
+
+    def test_error_groups_count_negation_errors(self):
+        import pandas as pd
+        from ptit_sentiment.evaluation.metrics import error_groups
+
+        predictions = pd.DataFrame([
+            {"text": "không tốt", "true_label": "negative", "predicted_label": "neutral"},
+            {"text": "rất tốt", "true_label": "positive", "predicted_label": "positive"},
+        ])
+        groups = error_groups(predictions).set_index("group")
+        self.assertEqual(int(groups.loc["negation", "support"]), 1)
+        self.assertEqual(int(groups.loc["negation", "errors"]), 1)
 
     def test_tfidf_test_transform_keeps_vocabulary_and_idf(self):
         vectorizer = make_vectorizer("tfidf")

@@ -85,15 +85,32 @@ def train_models(splits_dir, config_path, artifact_dir, output_dir):
     for name in MODEL_NAMES:
         feature, algorithm = name.split("_")
         parameters = config["grid"]["nb_alpha" if algorithm == "nb" else "svm_c"]
-        candidates = list(product(config["grid"]["ngram_range"], parameters))
+        emoji_modes = config["grid"].get("emoji", [config.get("preprocessing", {}).get("emoji", "keep")])
+        weights = config["grid"].get("svm_class_weight", [None]) if algorithm == "svm" else [None]
+        tfidf_modes = config["grid"].get("tfidf_mode", ["word"]) if feature == "tfidf" else ["word"]
+        min_dfs = config["grid"].get("min_df", [config.get("vectorizer", {}).get("min_df", 1)])
+        sublinear_values = config["grid"].get("sublinear_tf", [False]) if feature == "tfidf" else [False]
+        candidates = list(product(config["grid"]["ngram_range"], parameters, emoji_modes,
+                                  weights, tfidf_modes, min_dfs, sublinear_values))
         if not candidates:
             raise ValueError(f"Lưới tham số {name} rỗng.")
         best_model, best_score, best_params, trials = None, -1.0, None, []
+<<<<<<< HEAD
         for ngram, parameter in candidates:
             trial_clock = perf_counter()
             model = make_pipeline(feature, algorithm, config, ngram, parameter)
             model.steps[0] = ("preprocess", processor)
             vectorizer, classifier = model.named_steps["vectorizer"], model.named_steps["classifier"]
+=======
+        for ngram, parameter, emoji, weight, tfidf_mode, min_df, sublinear_tf in candidates:
+            options = dict(config.get("vectorizer", {}))
+            options["min_df"] = min_df
+            if feature == "tfidf":
+                options["sublinear_tf"] = sublinear_tf
+            model = make_pipeline(feature, algorithm, config, ngram, parameter,
+                                  emoji=emoji, class_weight=weight, tfidf_mode=tfidf_mode,
+                                  vectorizer_options=options)
+>>>>>>> main
             try:
                 train_matrix = vectorizer.fit_transform(train_tokens)
                 validation_matrix = vectorizer.transform(validation_tokens)
@@ -106,11 +123,21 @@ def train_models(splits_dir, config_path, artifact_dir, output_dir):
             predicted = classifier.predict(validation_matrix)
             score = float(f1_score(validation["label"], predicted, labels=list(LABELS),
                                    average="macro", zero_division=0))
+<<<<<<< HEAD
             params = {"ngram_range": list(ngram), "alpha" if algorithm == "nb" else "C": parameter}
             trials.append({"parameters": params, "validation_macro_f1": score,
                            "fit_seconds": fit_seconds, "total_seconds": perf_counter() - trial_clock,
                            "train_shape": list(train_matrix.shape), "train_nnz": train_matrix.nnz,
                            "fit_attempts": attempts})
+=======
+            params = {"ngram_range": list(ngram), "emoji": emoji, "min_df": min_df,
+                      "alpha" if algorithm == "nb" else "C": parameter}
+            if feature == "tfidf":
+                params.update(tfidf_mode=tfidf_mode, sublinear_tf=sublinear_tf)
+            if algorithm == "svm":
+                params["class_weight"] = weight
+            trials.append({"parameters": params, "validation_macro_f1": score})
+>>>>>>> main
             # Nếu hòa, lấy cấu hình xuất hiện trước trong YAML để tái lập.
             if score > best_score:
                 best_model, best_score, best_params = model, score, params

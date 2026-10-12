@@ -33,6 +33,8 @@ def compute_metrics(true_labels, predicted_labels):
 def prediction_frame(frame, predicted, model_name, probabilities=None, classes=None):
     """Giữ id/text gốc; nhãn thật rỗng cho bình luận mới không gán nhãn."""
     result = frame.loc[:, ["id", "text"]].copy()
+    if "post_id" in frame.columns:
+        result.insert(1, "post_id", frame["post_id"].values)
     result["true_label"] = frame["label"] if "label" in frame.columns else ""
     result["predicted_label"] = list(predicted)
     result["model_name"] = model_name
@@ -44,6 +46,31 @@ def prediction_frame(frame, predicted, model_name, probabilities=None, classes=N
         for label in LABELS:
             result[f"probability_{label}"] = probabilities[:, classes.index(label)]
     return result
+
+
+def error_groups(predictions):
+    """Tóm tắt độ đúng theo dấu hiệu câu; chỉ mô tả, không chọn model theo test."""
+    texts = predictions["text"].fillna("")
+    lengths = texts.str.split().str.len()
+    groups = {
+        "all": pd.Series(True, index=predictions.index),
+        "negation": texts.str.contains(r"(?iu)\b(?:không|chưa|chẳng|chả|đừng|ko|khum|hok)\b"),
+        "emoji": texts.str.contains("[\U0001F000-\U0001FAFF\u2600-\u27BF]"),
+        "ambiguous_slang": texts.str.contains(r"(?iu)\b(?:k|dc|đc|mn|sv)\b"),
+        "short_1_5_words": lengths.le(5),
+        "medium_6_20_words": lengths.between(6, 20),
+        "long_over_20_words": lengths.gt(20),
+    }
+    rows = []
+    for name, mask in groups.items():
+        part = predictions.loc[mask]
+        if part.empty:
+            continue
+        metrics = compute_metrics(part["true_label"].tolist(), part["predicted_label"].tolist())
+        rows.append({"group": name, "support": len(part), "accuracy": metrics["accuracy"],
+                     "macro_f1": metrics["macro_f1"],
+                     "errors": int((part["true_label"] != part["predicted_label"]).sum())})
+    return pd.DataFrame(rows)
 
 
 def export_evaluation(output_dir, predictions, metadata):
@@ -67,6 +94,12 @@ def export_evaluation(output_dir, predictions, metadata):
                                         metrics["macro_f1"], metrics["n_samples"]]
     classification.to_csv(output_dir / "classification_report.csv", encoding="utf-8")
     predictions.to_csv(output_dir / "predictions.csv", index=False, encoding="utf-8")
+    error_groups(predictions).to_csv(output_dir / "error_groups.csv", index=False, encoding="utf-8")
+    if "post_id" in predictions.columns:
+        per_post = predictions.assign(error=predictions["true_label"] != predictions["predicted_label"])
+        per_post.groupby("post_id", as_index=False).agg(
+            support=("id", "size"), errors=("error", "sum")
+        ).to_csv(output_dir / "errors_by_post.csv", index=False, encoding="utf-8")
     predictions.loc[predictions["true_label"] != predictions["predicted_label"]].to_csv(
         output_dir / "errors.csv", index=False, encoding="utf-8")
     matrix = np.array(metrics["confusion_matrix"]["values"])
