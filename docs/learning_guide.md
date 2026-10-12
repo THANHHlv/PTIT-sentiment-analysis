@@ -1,5 +1,8 @@
 # Hướng dẫn học và giải thích dự án
 
+Lệnh cài/chạy ở [README](../README.md); dữ liệu hiện tại ở [hợp đồng dữ liệu](data_contract.md).
+Ví dụ tính tay trong tài liệu chỉ dùng để học.
+
 ## 1. Từ bình luận đến nhãn
 
 Ví dụ tự viết: “SV ko thích lịch học mới 😢”.
@@ -84,7 +87,7 @@ Sau chuẩn L2, chia cho sqrt(1.288²+1.693²), xấp xỉ [0.605,0,0.796,0].
 Từ hiếm hơn có trọng số IDF cao hơn, nhưng không đồng nghĩa quan trọng hơn về cảm xúc.
 Xem features/vectorizers.py và [sklearn feature extraction](https://scikit-learn.org/1.5/modules/feature_extraction.html).
 
-## 7. Phần 3: Multinomial Naive Bayes
+## 7. Multinomial Naive Bayes
 
 NB chọn lớp tối đa hóa log P(c) + tổng_j x_j log P(t_j|c).
 P(c) lấy từ tỷ lệ nhãn train. P(t|c) ước lượng từ số đếm đặc trưng của lớp,
@@ -102,7 +105,7 @@ dù trọng số TF-IDF không còn là số đếm nguyên theo mô hình sinh 
 Không giải thích predict_proba của NB như xác suất đã hiệu chỉnh.
 Code: models/classical.py tạo MultinomialNB; training/train_classical.py chọn alpha bằng validation.
 
-## 8. Phần 3: SVM tuyến tính
+## 8. SVM tuyến tính
 
 Hãy tưởng tượng hai trục “từ khen” và “từ chê”. SVM tìm ranh giới phân biệt các lớp,
 ưu tiên margin lớn đồng thời phạt lỗi phân loại.
@@ -163,14 +166,14 @@ tạo phiên bản dữ liệu mới và báo rõ việc thay đổi.
 | Bước | File dưới src/ptit_sentiment/ | Điều cần giải thích |
 |---|---|---|
 | Schema/nhãn | labels.py, data/validate.py | Nhãn nằm ở đâu, dữ liệu sai bị chặn thế nào? |
-| Chia tập | data/split.py | Nhóm bài viết và hash chống rò rỉ ra sao? |
-| Xử lý | preprocessing/normalize.py, tokenize.py | Vì sao giữ phủ định, emoji? |
-| Vector | features/vectorizers.py | Vocabulary/IDF học khi nào? |
-| NB/SVM | models/classical.py | alpha, C, score và probability? |
-| Chọn cấu hình | training/train_classical.py | train/validation/test dùng ở đâu? |
-| PhoBERT | training/train_phobert.py, models/phobert.py | Chọn checkpoint, cắt token, thiết bị? |
-| Đánh giá | evaluation/metrics.py, evaluate.py, compare.py | Macro, support, trục ma trận? |
-| Dự đoán | predict.py | Vì sao không cần fit lại? |
+| Chia tập | [data/split.py](../src/ptit_sentiment/data/split.py) | Nhóm bài viết và hash chống rò rỉ ra sao? |
+| Xử lý | [preprocessing/normalize.py, tokenize.py](../src/ptit_sentiment/preprocessing/normalize.py) | Vì sao giữ phủ định, emoji? |
+| Vector | [features/vectorizers.py](../src/ptit_sentiment/features/vectorizers.py) | Vocabulary/IDF học khi nào? |
+| NB/SVM | [models/classical.py](../src/ptit_sentiment/models/classical.py) | alpha, C, score và probability? |
+| Chọn cấu hình | [training/train_classical.py](../src/ptit_sentiment/training/train_classical.py) | train/validation/test dùng ở đâu? |
+| PhoBERT | [training/train_phobert.py, models/phobert.py](../src/ptit_sentiment/training/train_phobert.py) | Chọn checkpoint, cắt token, thiết bị? |
+| Đánh giá | [evaluation/metrics.py, evaluate.py, compare.py](../src/ptit_sentiment/evaluation/metrics.py) | Macro, support, trục ma trận? |
+| Dự đoán | [predict.py](../src/ptit_sentiment/predict.py) | Vì sao không cần fit lại? |
 
 Người phụ trách phần 3 nên đọc mục 3–8, 10–11 của tài liệu này, rồi lần lượt đọc
 models/classical.py → training/train_classical.py → evaluation/metrics.py → evaluate.py → compare.py.

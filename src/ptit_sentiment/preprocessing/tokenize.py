@@ -47,11 +47,18 @@ class TextPreprocessor(TransformerMixin, BaseEstimator):
     def transform(self, X):
         stop = self._stop_set()
         result = []
-        for text in X:
+        for index, text in enumerate(X):
+            if not isinstance(text, str) or not text.strip():
+                raise ValueError(f"Bình luận tại vị trí {index} phải là chuỗi không rỗng.")
             cleaned = normalize_text(text, self.lowercase, self.replace_urls, self.expand_slang, self.emoji,
                                      getattr(self, "slang_map", None), getattr(self, "mask_sensitive", True))
+            if not cleaned:
+                raise ValueError(f"Bình luận tại vị trí {index} rỗng sau chuẩn hóa.")
             segmented = tokenize_vietnamese(cleaned)
-            result.append(" ".join(token for token in segmented.split() if token.casefold() not in stop))
+            processed = " ".join(token for token in segmented.split() if token.casefold() not in stop)
+            if not processed:
+                raise ValueError(f"Bình luận tại vị trí {index} rỗng sau tách từ/loại stop words.")
+            result.append(processed)
         return result
 
 

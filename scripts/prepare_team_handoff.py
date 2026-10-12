@@ -22,9 +22,8 @@ PUBLIC_SCRIPTS = (
     'export_report_evidence.py', 'verify_ai_dataset.py', 'verify_annotation_run.py',
 )
 PUBLIC_DOCS = (
-    'data_contract.md', 'labeling_guide.md', 'annotation_review.md',
-    'methodology.md', 'learning_guide.md', 'task_assignment.md', 'report_outline.md',
-    'team_handoff.md',
+    'data_contract.md', 'labeling_guide.md', 'methodology.md',
+    'learning_guide.md', 'task_assignment.md',
 )
 PUBLIC_CONFIGS = ('classical.yaml', 'phobert.yaml', 'phobert_gpu4gb.yaml', 'phobert_smoke.yaml')
 
@@ -106,10 +105,10 @@ không thay fine-tune đầy đủ. Chỉ so sánh những lần đánh giá cù
 Người 1: data/validate/split/gán nhãn. Người 2: preprocessing/features.
 Người 3: models/classical, training/train_classical, evaluation.
 Người 4: PhoBERT/predict/tích hợp. Xem docs/task_assignment.md và docs/learning_guide.md.
-Tất cả cùng rà nhãn bằng annotation_batches_ai_v1; người 1 ghép kết quả.
+Tất cả cùng rà nhãn theo docs/labeling_guide.md; người 1 ghép kết quả.
 
 Báo cáo cũ và script giả xác nhận không nằm trong bản này. report/README.md
-ghi trạng thái cần viết báo cáo; docs/report_outline.md cung cấp đề cương.
+ghi trạng thái cần viết báo cáo; docs/task_assignment.md cung cấp đề cương.
 Không ghi Kappa/đồng thuận người hoặc kết luận mô hình tốt nhất từ nhãn cũ.
 Chưa kiểm chứng cài mới từ Internet trên máy thành viên khác.
 
@@ -134,10 +133,6 @@ def copy_file(root, code, name):
 
 def write_public_index(code):
     """Viết hướng dẫn tự chứa và danh sách file được phép upload."""
-    guide = code / 'docs/team_handoff.md'
-    content = guide.read_text(encoding='utf-8').partition('Xem thêm [chính sách GitHub')[0]
-    guide.write_text(content + 'Xem README.md tại gốc code cho chính sách chia sẻ và lệnh sử dụng.\n',
-                     encoding='utf-8')
     names = sorted(p.relative_to(code).as_posix() for p in code.rglob('*')
                    if p.is_file() and p.name != 'FILES_TO_UPLOAD.txt')
     (code / 'FILES_TO_UPLOAD.txt').write_text(
@@ -192,7 +187,7 @@ def prepare(root, destination):
     (code / 'README.md').write_text(CODE_README.replace('\\\\', '\\'), encoding='utf-8')
     (code / 'report').mkdir()
     (code / 'report/README.md').write_text(
-        '# Trạng thái báo cáo\n\nDùng docs/report_outline.md để viết báo cáo mới. '
+        '# Trạng thái báo cáo\n\nDùng docs/task_assignment.md để viết báo cáo mới. '
         'Bộ hiện tại là nhãn AI ban đầu, chưa có nhãn người xác nhận, chưa train/evaluate '
         'lại trong lần bàn giao. Không sử dụng khẳng định hoàn thành, Kappa hoặc '
         'kết quả test của bản cũ làm kết quả hiện hành.\n', encoding='utf-8')
@@ -263,7 +258,7 @@ def prepare(root, destination):
         '--assignment-dir data/labeled/annotation_batches_ai_v1 '
         '--output-dir data/labeled/human_review_handoff_v1\n```\n\n'
         'Output mới ghi needs_review/disagreements; pending chưa thành nhãn người. '
-        'Thảo luận bất đồng, chỉ xác nhận thật rồi ghép theo docs/annotation_review.md. '
+        'Thảo luận bất đồng, chỉ xác nhận thật rồi ghép theo docs/labeling_guide.md. '
         'Không sửa tập AI hiện tại; phát hành bộ nhãn/bộ chia version mới. '
         'Bản sao assignment_manifest đã đổi clean_file sang đường dẫn tương đối để chạy trên máy khác.\n',
         encoding='utf-8')

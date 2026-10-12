@@ -5,7 +5,7 @@ from pathlib import Path
 import joblib
 import pandas as pd
 
-from ptit_sentiment.common import read_json, run_cli, write_json
+from ptit_sentiment.common import file_hash, read_json, run_cli, write_json
 from ptit_sentiment.data.validate import read_csv
 from ptit_sentiment.evaluation.metrics import prediction_frame
 from ptit_sentiment.labels import LABELS, LABEL_TO_ID
@@ -24,6 +24,8 @@ def load_artifact(path, segmenter_dir=None):
     if path.suffix != ".joblib":
         raise ValueError("Mô hình truyền thống cần tệp .joblib; PhoBERT cần thư mục đã lưu.")
     metadata = read_json(path.with_suffix(".metadata.json"))
+    if metadata.get("artifact_sha256") and file_hash(path) != metadata["artifact_sha256"]:
+        raise ValueError("Artifact không khớp SHA-256 trong metadata.")
     if metadata.get("label_to_id") != LABEL_TO_ID:
         raise ValueError("Ánh xạ nhãn artifact khác labels.py.")
     model = joblib.load(path)

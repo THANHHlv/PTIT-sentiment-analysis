@@ -2,6 +2,9 @@
 
 ## Luồng
 
+Bộ AI hiện tại đã chia sẵn; dùng data/splits cho mọi mô hình.
+Schema, phiên bản và lệnh kiểm tra ở [hợp đồng dữ liệu](data_contract.md).
+
 CSV gốc → validate → group split theo post_id → fit train → chọn Macro-F1 validation →
 lưu artifact → evaluate test riêng → compare → phân tích errors.csv.
 Baseline dùng nhãn phổ biến nhất train. Không fit vectorizer trước split.
@@ -90,4 +93,18 @@ phải báo tỷ lệ mẫu bị cắt theo từng tập thực nghiệm.
 configs/phobert_smoke.yaml là kiểm tra một bước trên đúng checkpoint;
 không được dùng điểm smoke để so chất lượng với mô hình đã huấn luyện đầy đủ.
 
-Bản báo cáo chính nằm ở report/report.md; số liệu minh họa truy vết được về report/evidence/evidence.json.
+## Trạng thái kiểm chứng và giới hạn
+
+Các lần chạy dưới đây là bằng chứng lịch sử ngày 03/10/2026, không phải kết quả của bộ AI hiện tại:
+
+| Lần chạy | Phạm vi | Bằng chứng local |
+|---|---|---|
+| complete_20261003 | Classical + baseline, lưu/tải, đánh giá và dự đoán trên 60 câu tổng hợp | outputs/complete_20261003/verification.json |
+| phobert_verified_20261003 | PhoBERT fine-tune một bước, lưu/tải, evaluate/predict trên bộ tổng hợp | outputs/phobert_verified_20261003/verification.json |
+
+Smoke PhoBERT dùng RTX 3050 Laptop 4 GB, batch 1, max_length 64;
+không thay fine-tune đầy đủ. Chưa kiểm chứng cài mới hoàn toàn trên máy thành viên khác.
+Không dùng điểm minh họa hoặc kết quả của phiên bản nhãn cũ làm điểm bộ AI hiện tại.
+Kết quả thực nghiệm mới phải có artifact, log và metrics khớp manifest hiện hành.
+Test nhãn AI đo mức phù hợp với nhãn AI; cần nhãn người độc lập để đánh giá thêm.
+Báo cáo tại [report/report.md](../report/report.md) cần rà lại khẳng định nhãn người/Kappa và phiên bản kết quả.

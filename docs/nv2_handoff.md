@@ -1,5 +1,10 @@
 # Bàn giao nhiệm vụ 2 — Tiền xử lý và trích chọn đặc trưng
 
+> Đối chiếu của người 3 ngày 09/10/2026: bốn CSV hiện tại đã khớp hash manifest
+> và bản lưu ZIP; cảnh báo hash ở mục 8 bên dưới không còn tái hiện trong workspace này.
+> Không sửa CSV/manifest để vượt kiểm tra. Xem [kết quả audit](part2_review.md)
+> và [bàn giao phần 3](part3_handoff.md). Nội dung bàn giao ban đầu được giữ bên dưới.
+
 Cập nhật: 07/10/2026  
 Phạm vi: phần tiền xử lý văn bản và tạo đặc trưng BoW/TF-IDF. Tài liệu này giúp thành viên tiếp theo biết NV2 đã làm gì, dùng file nào, đã kiểm thử đến đâu và còn vướng gì.
 

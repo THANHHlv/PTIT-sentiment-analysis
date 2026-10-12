@@ -1,11 +1,55 @@
 # ptit-sentiment-analysis
 
-**Đưa lên GitHub và bàn giao nhóm:** xem [hướng dẫn cụ thể](docs/github_handoff.md).
+## Phần 3 đã chạy trên dữ liệu thật — 09/10/2026
+
+Đã kiểm tra NV2, train 24 cấu hình, chọn trên validation và đánh giá bốn pipeline
+NB/SVM cùng majority baseline trên bộ chia hiện tại 1801/409/390.
+2.600 nhãn đều AI; kết quả chỉ đo mức phù hợp với nhãn AI, chưa thay đánh giá bằng nhãn người độc lập.
+Lần chạy: `part3_20261009_cpu`, CPU, 57/57 tests đạt; không đổi dữ liệu/bộ chia và không chạy PhoBERT.
+BoW+NB có Macro-F1 test cao nhất trong lần này: 0.541757; baseline: 0.273323.
+
+- [Kiểm tra người 2](docs/part2_review.md).
+- [Kết quả, cấu hình và phương pháp phần 3](report/part3_classical.md), [25 câu sai](report/part3_error_analysis.md).
+- [Bàn giao người 4 và API chung](docs/part3_handoff.md), [tài liệu học phần 3](docs/part3_learning.md).
+- Artifact: `artifacts/part3_20261009_cpu/`; kết quả/log: `outputs/part3_20261009_cpu/`.
+
+Chạy từ gốc dự án bằng môi trường đã cài ở mục bên dưới; chọn tên lần chạy chưa tồn tại:
+
+```powershell
+$python = ".\.venv\Scripts\python.exe"
+& $python scripts/run_part3.py --run-name part3_rerun_01
+& $python -m ptit_sentiment.predict --model artifacts/part3_20261009_cpu/bow_nb.joblib --text "Mình chưa hài lòng với lịch học."
+```
+
+Lệnh tự chạy audit NV2/dữ liệu, tests, train, khóa lựa chọn, evaluate, compare và kiểm chứng.
+Không tự chia lại bộ AI hiện tại. Các ví dụ smoke/bộ chia cũ phía dưới là lần kiểm tra lịch sử;
+không trộn điểm số của chúng vào kết quả `part3_20261009_cpu`.
+
+Chạy riêng từng giai đoạn trên **bộ dữ liệu thật hiện có**, chọn `$run` mới:
+
+```powershell
+$run = "part3_manual_01"
+& $python -m ptit_sentiment.data.validate --input data/labeled/labeled_comments.csv
+& $python -m ptit_sentiment.training.train_classical --splits-dir data/splits --config configs/part3.yaml --artifact-dir "artifacts/$run" --output-dir "outputs/$run/training"
+# training/selection_lock.json chốt toàn bộ lựa chọn trước bước test dưới đây.
+$models = @("bow_nb", "tfidf_nb", "bow_svm", "tfidf_svm", "majority_baseline")
+foreach ($model in $models) {
+    & $python -m ptit_sentiment.evaluation.evaluate --model "artifacts/$run/$model.joblib" --splits-dir data/splits --output-dir "outputs/$run/evaluation/$model"
+}
+$metricPaths = $models | ForEach-Object { "outputs/$run/evaluation/$_/metrics.json" }
+& $python -m ptit_sentiment.evaluation.compare --inputs $metricPaths --output "outputs/$run/comparison.csv"
+& $python -m ptit_sentiment.predict --model "artifacts/$run/tfidf_svm.joblib" --input tests/fixtures/new_comments.csv --output "outputs/$run/new_predictions.csv"
+```
+
+Không ghi đè kết quả có sẵn. `report/report.md` tích hợp phần hiện tại và giữ nguyên bản cũ
+trong mục lịch sử được ghi rõ là không dùng cho bộ AI này.
+
+**Đưa lên GitHub và bàn giao nhóm:** xem [phân công và bàn giao](docs/task_assignment.md).
 Dữ liệu thật nhận qua gói riêng; GitHub chứa code, tài liệu và dữ liệu minh họa.
 Đã gom bản bàn giao local tại `handoff/PTIT_BAN_GIAO_20261007/`;
-xem [cấu trúc và phần việc từng người](docs/team_handoff.md).
+xem [cấu trúc và phần việc từng người](docs/task_assignment.md).
 
-**Bộ nhãn AI ban đầu — 06/10/2026:** xem [kiểm toán và hướng dẫn kiểm tra](docs/annotation_review.md).
+**Bộ nhãn AI ban đầu — 06/10/2026:** xem [quy tắc gán nhãn](docs/labeling_guide.md).
 Đã đọc toàn bộ 2.856 bình luận qua kiểm tra cấu trúc từ 2.864 dòng gốc:
 2.600 nhãn AI (positive 362, neutral 1.800, negative 438), 194 unresolved, 70 bị loại.
 Nhãn có `label_source=ai`, `annotation_status=ai_labeled`; nhãn người xác nhận thật: 0.
@@ -32,7 +76,7 @@ Nguồn gốc đã lưu trong ZIP riêng: `data/raw/ptit_sources_v1/comments.csv
 2.377 dòng ptit_2k5 và 487 dòng ptit_group_584397217391365.
 Dữ liệu đang dùng: `data/labeled/labeled_comments.csv` và ba CSV trong `data/splits/`.
 Unresolved, excluded, mẫu kiểm tra và phân công người chỉ còn trong ZIP hồ sơ riêng.
-Lệnh ghép nhãn người và quy tắc sửa/xác nhận nằm trong docs/annotation_review.md.
+Lệnh ghép nhãn người và quy tắc sửa/xác nhận nằm trong docs/labeling_guide.md.
 
 ```powershell
 $python = ".\.venv\Scripts\python.exe"
@@ -155,7 +199,7 @@ Tệp/thư mục kết quả đã tồn tại sẽ bị từ chối; chọn tên
 ~~~powershell
 & $python -m ptit_sentiment.data.validate --input data/labeled/labeled_comments.csv
 # Bộ AI hiện tại đã chia ở data/splits; không tạo lại khi chưa đổi dữ liệu.
-# Với nhãn người: ghép/xác nhận theo docs/annotation_review.md rồi chọn output mới.
+# Với nhãn người: ghép/xác nhận theo docs/labeling_guide.md rồi chọn output mới.
 ~~~
 
 Với bộ AI hiện tại, dùng data/splits cho cả classical và PhoBERT.
@@ -188,7 +232,7 @@ Chuẩn bị segmenter khi thực sự bắt đầu phần PhoBERT:
 
 Lệnh setup tải JAR và hai tệp word segmentation từ repo chính thức, ghi hash tại resources.json;
 không cần wget. Có --revision <commit> để ghim nguồn VnCoreNLP.
-Đã kiểm chứng VnCoreNLP và PhoBERT thật trong lần smoke một bước; xem docs/verification.md.
+Đã kiểm chứng VnCoreNLP và PhoBERT thật trong lần smoke một bước; xem docs/methodology.md.
 Nếu đã có tài nguyên local, chỉ sửa segmenter_dir trong configs/phobert.yaml.
 
 Cấu hình mặc định vinai/phobert-base, max_length 256, 3 epoch; sửa batch/learning rate/use_cpu/fp16
@@ -200,13 +244,13 @@ Trainer ghim transformers==4.44.2, dùng eval_strategy và chọn checkpoint b�
 xem [API Trainer](https://huggingface.co/docs/transformers/v4.44.2/main_classes/trainer).
 
 ~~~powershell
-& $python -m ptit_sentiment.training.train_phobert --splits-dir data/splits/real_v1 --config configs/phobert.yaml --artifact-dir artifacts/real_v1/phobert
-& $python -m ptit_sentiment.evaluation.evaluate --model artifacts/real_v1/phobert --splits-dir data/splits/real_v1 --output-dir outputs/real_v1/evaluation/phobert
+& $python -m ptit_sentiment.training.train_phobert --splits-dir data/splits --config configs/phobert.yaml --artifact-dir artifacts/real_v1/phobert
+& $python -m ptit_sentiment.evaluation.evaluate --model artifacts/real_v1/phobert --splits-dir data/splits --output-dir outputs/real_v1/evaluation/phobert
 & $python -m ptit_sentiment.predict --model artifacts/real_v1/phobert --text "Mình hài lòng với buổi tư vấn."
 ~~~
 
 Có thể thêm outputs/real_v1/evaluation/phobert/metrics.json vào --inputs của compare với các classical
-cùng real_v1. Inference dùng model/tokenizer local, không tải checkpoint hoặc train lại.
+cùng bộ chia data/splits. Inference dùng model/tokenizer local, không tải checkpoint hoặc train lại.
 Model/tokenizer, labels.json, training_config.json, metadata.json và log/checkpoint được lưu cùng artifact.
 Nếu di chuyển máy, dùng --segmenter-dir <đường dẫn local mới> trong evaluate/predict.
 
@@ -219,9 +263,9 @@ Nếu di chuyển máy, dùng --segmenter-dir <đường dẫn local mới> tron
 - docs/task_assignment.md: đầu vào/đầu ra/điều kiện hoàn thành/câu hỏi cho bốn người.
 - docs/data_contract.md: schema, nhãn, split và định dạng giao tiếp.
 - docs/labeling_guide.md, methodology.md: hướng dẫn nhãn và lựa chọn phương pháp.
-- docs/report_outline.md: khung báo cáo với ô CHƯA ĐO/CHƯA CHẠY THẬT.
+- report/report.md: báo cáo; đề cương và điều kiện dùng số liệu ở docs/task_assignment.md.
 - scripts/run_smoke.py, tests/: kiểm tra tích hợp và ràng buộc dữ liệu.
-- docs/verification.md: kết quả kiểm chứng, phiên bản và giới hạn.
+- docs/methodology.md: kết quả kiểm chứng, phiên bản và giới hạn.
 
 Text đã xử lý chỉ nằm trong pipeline, không ghi đè CSV gốc.
 Vocabulary/IDF chỉ fit train; không dùng test chọn tham số.
@@ -234,7 +278,7 @@ kiểm tra không giao post_id/id/text và bộ unittest. Kết quả là kiểm
 Môi trường bàn giao dùng .venv --system-site-packages và editable install --no-deps --no-build-isolation
 để tái dùng thư viện sẵn có; chưa kiểm chứng cài mới hoàn toàn từ Internet.
 Import module PhoBERT không tự import torch/transformers/py_vncorenlp; đã kiểm tra syntax/CLI.
-Trạng thái PhoBERT chi tiết được cập nhật tại docs/verification.md; smoke một bước không thay thực nghiệm đầy đủ.
+Trạng thái PhoBERT chi tiết được cập nhật tại docs/methodology.md; smoke một bước không thay thực nghiệm đầy đủ.
 Đã chạy PhoBERT một bước trên GPU RTX 3050 Laptop, reload khớp nhãn validation, evaluate/predict thành công.
 Artifact: artifacts/phobert_verified_20261003; kết quả: outputs/phobert_verified_20261003.
 Người 4 cần fine-tune đầy đủ với dữ liệu thật và cấu hình phù hợp máy.

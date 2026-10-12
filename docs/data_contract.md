@@ -1,79 +1,88 @@
-# Hợp đồng dữ liệu và giao tiếp
+# Hợp đồng dữ liệu
 
-> Cập nhật 07/10/2026: data đã thu gọn, chỉ còn labeled_comments.csv và
-> train/validation/test cùng manifest.json chứa metadata nhúng. Hồ sơ gán
-> nhãn, dữ liệu thô, unresolved/excluded đã lưu riêng trong
-> outputs/archives/data_minimal_20261007.zip. Các đường dẫn hồ sơ/batch trong
-> nội dung lịch sử dưới đây chỉ dùng sau khi khôi phục ZIP, không có trong
-> data hiện tại. Kiểm tra bộ đang dùng bằng scripts/verify_ai_dataset.py;
-> đóng gói bằng scripts/package_team_data.py. Fixture ở tests/fixtures/.
+## Bộ đang sử dụng
 
-## CSV đầu vào
+Phiên bản: `ai_initial_4e93595ef7d1_seed42`, seed 42. Dữ liệu bình luận thật,
+nhãn AI ban đầu được người dùng cho phép; chưa có nhãn người xác nhận.
+Test AI chỉ đo mức phù hợp với nhãn AI, chưa thay thế đánh giá bằng nhãn người độc lập.
 
-CSV UTF-8 (chấp nhận BOM), header id,post_id,text,label. Mỗi dòng một bình luận.
-Cột đọc dưới dạng chuỗi, giữ số 0 đầu mã; cho phép cột bổ sung để lưu nguồn nội bộ.
-id duy nhất; post_id là bài viết nguồn; hai mã không có khoảng trắng đầu/cuối.
-text là nội dung gốc không rỗng. label đúng một nhãn, không có khoảng trắng dư.
-Nguồn duy nhất: src/ptit_sentiment/labels.py, positive=0, neutral=1, negative=2.
-Không tạo mapping riêng trong notebook. Mẫu nhập thật data/labeled/template.csv chỉ có header.
-needs_review không đưa vào CSV đã chốt. Không đưa dữ liệu thật/định danh cá nhân lên Git.
+`data/` chỉ giữ:
 
-Validator từ chối id trùng và text trùng sau NFC, casefold, gộp khoảng trắng.
-Khóa so trùng không ghi đè text, không phát hiện được mọi paraphrase.
-Người 1 phải rà gần trùng, sao chép và nhãn mâu thuẫn; không tự xóa/chọn nhãn khi gặp trùng.
+- `labeled/labeled_comments.csv`: 2.600 bình luận có nhãn.
+- `splits/train.csv`, `validation.csv`, `test.csv` và `manifest.json`.
 
-## Bộ chia bất biến
+| Tập | Tổng | positive | neutral | negative |
+|---|---:|---:|---:|---:|
+| train | 1.801 | 254 | 1.246 | 301 |
+| validation | 409 | 58 | 283 | 68 |
+| test | 390 | 50 | 271 | 69 |
+| Tổng | 2.600 | 362 | 1.800 | 438 |
 
-train.csv, validation.csv, test.csv cùng schema, cùng thư mục manifest.json.
-Tỷ lệ mặc định 70/15/15; thực tế xấp xỉ vì nhóm post_id không chia nhỏ được.
-Mỗi tập đủ ba nhãn; không giao id/post_id/text key.
-Mỗi nhãn cần xuất hiện trong ít nhất ba nhóm (điều kiện cần, chưa đảm bảo tìm được bộ chia).
-Nếu không tìm được: bổ sung dữ liệu/nhóm, điều chỉnh tỷ lệ hoặc attempts; không fallback chia dòng.
-Manifest chứa SHA256 nguồn/từng CSV, seed, tỷ lệ yêu cầu/thực tế, phân bố nhãn, danh sách id/post_id,
-thuật toán và provenance real/synthetic. Khóa bộ chia trước thực nghiệm; không chọn seed theo điểm test.
-Train xác minh toàn vẹn cả bộ chia nhưng chỉ fit text/label train, chọn tham số bằng validation;
-không tính metric test. Tất cả mô hình dùng cùng manifest.
-Evaluate kiểm tra hash manifest; compare từ chối trộn bộ chia/tập/hash dữ liệu.
-Sửa dữ liệu phải tạo bộ chia mới và artifact mới.
+Nguồn thô, 194 unresolved, 70 bị loại và hồ sơ gán nhãn nằm trong
+`outputs/archives/data_minimal_20261007.zip`; không tự đưa lại vào data.
+Manifest nhúng metadata nguồn/nhãn, hash, seed và ràng buộc chống rò rỉ.
+Dữ liệu tổng hợp để thử code nằm ở `tests/fixtures/`.
+
+## CSV và nhãn
+
+CSV UTF-8, chấp nhận BOM; mỗi dòng một bình luận. Đọc các cột dạng chuỗi để giữ mã dài/số 0 đầu.
+
+| Cột | Yêu cầu |
+|---|---|
+| id | Duy nhất, không rỗng, không có khoảng trắng thừa |
+| post_id | Mã bài viết thật, không rỗng; không tạo mã giả |
+| text | Nội dung gốc không rỗng, không ghi đè bằng text đã xử lý |
+| label | positive, neutral hoặc negative cho mọi dòng huấn luyện |
+| label_source / annotation_status | Bộ hiện tại: ai / ai_labeled |
+| source_id / source_url / collected_at | Giữ metadata nguồn hiện có |
+| reason / review_priority | Lý do và mức ưu tiên rà soát; không phải xác suất |
+
+Ánh xạ duy nhất tại [labels.py](../src/ptit_sentiment/labels.py): positive=0, neutral=1, negative=2.
+Câu chưa đủ căn cứ giữ label trống trong hồ sơ unresolved, không đưa vào bộ chia.
+Validator từ chối ID trùng và text trùng sau NFC/casefold/gộp khoảng trắng;
+khóa so trùng không sửa text và không phát hiện mọi cách diễn đạt lại.
+
+Khi mở CSV bằng Excel, nhập qua Data → From Text/CSV, chọn UTF-8 và đặt mọi cột
+thành Text trước Load; tránh đổi mã dài hoặc thực thi nội dung như công thức.
+
+## Bộ chia và kiểm tra
+
+Mọi mô hình dùng cùng bộ chia đã khóa. Tỷ lệ mục tiêu 70/15/15, tỷ lệ thực tế
+xấp xỉ do chia nguyên nhóm bài viết. Bộ hiện tại còn nối nhóm theo quan hệ
+trùng lịch sử và các cặp gần trùng đã nhận diện.
+Không giao ID, post_id, nội dung chuẩn hóa hoặc thành phần nhóm giữa các tập;
+mỗi tập đủ ba nhãn. Không chia lại trên từng máy hoặc chọn seed theo điểm test.
+Đổi dữ liệu/nhãn phải phát hành bộ chia và artifact phiên bản mới.
+
+Chạy từ gốc dự án sau khi cài package theo [README](../README.md):
+
+```powershell
+$python = ".\.venv\Scripts\python.exe"
+& $python scripts/verify_ai_dataset.py
+& $python -m ptit_sentiment.data.validate --input data/labeled/labeled_comments.csv
+# Đích phải chưa tồn tại; gói chỉ dùng để chia sẻ nội bộ:
+& $python scripts/package_team_data.py --output handoff/minimal_ai_dataset_new.zip
+```
+
+Kiểm tra bộ tối giản đối chiếu CSV, hash và metadata nhúng; không đọc lại nguồn thô đã lưu ZIP.
+Mỗi thành viên nhận cùng gói riêng, sao chép data/ vào gốc clone rồi kiểm tra.
+Không commit bình luận thật, dữ liệu nhận diện, cookie, cache, model hoặc output lớn.
 
 ## Artifact và kết quả
 
-Classical: <model_name>.joblib là pipeline preprocessing → vectorizer → classifier.
-<model_name>.metadata.json chứa nhãn, cấu hình, tham số chọn, phiên bản và hash bộ chia.
-Baseline là DummyClassifier học nhãn phổ biến nhất từ train, bỏ qua text.
-Chỉ tải joblib do nhóm tạo và tin cậy vì pickle/joblib có thể thực thi code.
+Classical: `<model_name>.joblib` lưu pipeline tiền xử lý → vectorizer → classifier;
+`<model_name>.metadata.json` lưu nhãn, cấu hình, tham số, phiên bản và hash bộ chia.
+Chỉ tải joblib do nhóm tạo và tin cậy.
+PhoBERT lưu model/tokenizer, labels.json, training_config.json, metadata.json,
+truncation.json và log/checkpoint; tài nguyên VnCoreNLP quản lý riêng.
 
-PhoBERT: thư mục Hugging Face model/tokenizer, labels.json, training_config.json, metadata.json,
-checkpoint/log trainer. Quản lý VnCoreNLP local riêng.
+Evaluate xuất metrics.json/.csv, classification_report.csv, per_label.csv,
+confusion_matrix.csv/.png, predictions.csv và errors.csv.
+CSV dự đoán đánh giá có id,text,true_label,predicted_label,model_name.
+NB/baseline và PhoBERT có thể xuất xác suất theo tên nhãn;
+LinearSVC không có xác suất. Xác suất nhãn không phải độ mạnh cảm xúc.
 
-CSV đánh giá: id,text,true_label,predicted_label,model_name; text giữ nguyên.
-NB/baseline có predict_proba, PhoBERT có softmax thì thêm
-probability_positive,probability_neutral,probability_negative theo đúng nhãn.
-LinearSVC không có xác suất; không biến decision_function thành probability.
-Xác suất chưa hiệu chỉnh không phải độ tin cậy đã kiểm định.
-CSV mới cần ít nhất id,text; label tùy chọn; true_label rỗng nếu chưa gán nhãn.
-
-Evaluate xuất metrics.json/.csv, per_label.csv, confusion_matrix.csv/.png,
-predictions.csv, errors.csv. JSON có label order, hàng thật/cột dự đoán, support,
-Macro-P/R/F1, accuracy, provenance, hash bộ chia/dữ liệu.
-Metric không xác định được tính 0 (zero_division=0).
-Compare chỉ tổng hợp metrics.json đã chạy, không tự thêm mô hình chưa chạy.
-
-## Bổ sung phiên bản hoàn thiện
-
-classification_report.csv chứa P/R/F1/support từng nhãn và dòng macro_avg;
-per_label.csv vẫn giữ để tương thích. Compare xuất thêm PNG cạnh CSV/JSON.
-Thông tin nhạy cảm được che trong bản xử lý theo mask_sensitive, không sửa text nguồn.
-Regex nhận email, số điện thoại VN và @handle; không đảm bảo ẩn danh tên người/địa chỉ.
-Dữ liệu thật và CSV predictions/errors phải được rà soát trước chia sẻ.
-PhoBERT lưu truncation.json cho train/validation; metrics.json có trường truncation khi evaluate.
-Predict PhoBERT với --output ghi thêm <tên>.truncation.json.
-
-## Hợp đồng nhập và xác nhận dữ liệu thật
-
-Nguồn thô `comments.csv` có thêm source_id/source_url/collected_at, không lưu tên tác giả.
-`collection_report.json` truy vết hash, checkpoint, loại/trùng và lỗi nguồn.
-Bảng gán nhãn có role/suggested_label/label/confirmed/notes; chỉ label được người xác nhận mới ghép.
-`labeling_report.json` status=confirmed, provenance=real và labeled_sha256 phải khớp CSV
-khi chia thật. Manifest bộ chia lưu bản báo cáo/hash; train và evaluate xác minh lại chúng.
-Các cột gợi ý không đi vào nhãn chuẩn. Xem [quy trình](real_data_workflow.md).
+CSV dự đoán mới cần id,text; label tùy chọn. Predict không fit lại mô hình.
+Evaluate yêu cầu nhãn; compare chỉ nhận kết quả cùng phiên bản bộ chia/tập/hash.
+Confusion matrix theo positive, neutral, negative; hàng thật, cột dự đoán.
+Text trong predictions/errors vẫn có thể chứa thông tin cá nhân; rà soát trước chia sẻ.

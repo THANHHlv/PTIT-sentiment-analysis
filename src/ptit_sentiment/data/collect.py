@@ -33,7 +33,7 @@ def export_rows(path, required_columns=()):
             raise ValueError("JSON phải là array hoặc object có data=array.")
         yield from rows
     else:
-        raise ValueError("Chỉ nhận CSV, JSON hoặc JSONL; xem docs/real_data_workflow.md.")
+        raise ValueError("Chỉ nhận CSV, JSON hoặc JSONL; xem docs/data_contract.md.")
 
 
 def connect_store(directory):

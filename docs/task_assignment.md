@@ -1,73 +1,46 @@
-# Phân công bốn người
+# Phân công và bàn giao
 
-Dùng chung package src, labels.py, data_contract.md và manifest. Làm nhánh riêng theo phần.
-Đổi giao tiếp phải thống nhất, cập nhật tài liệu và smoke test. Không có slide/giao diện.
+Cả nhóm dùng cùng package, [hợp đồng dữ liệu](data_contract.md), labels.py và manifest.
+Mỗi người làm nhánh riêng trong cùng kho; không tự chia lại dữ liệu trên từng máy.
 
-## Người 1 — Dữ liệu
+| Người | Phần phụ trách | Đầu vào | Đầu ra cần bàn giao |
+|---|---|---|---|
+| 1 | data/, điều phối gán nhãn, ghép báo cáo | Bình luận thật và hồ sơ nguồn, nhãn thành viên | CSV nhãn, bộ chia/manifest, thống kê nguồn/nhãn, phần báo cáo dữ liệu |
+| 2 | preprocessing/, features/ | Train, text gốc, classical.yaml | Transformer lưu/tải được, BoW/TF-IDF, ví dụ trước/sau, giải thích lựa chọn |
+| 3 | models/classical.py, training/train_classical.py, evaluation/ | Bộ chia khóa và tiền xử lý | Bốn pipeline + baseline, log chọn tham số, metrics/ma trận/lỗi, bảng so sánh |
+| 4 | PhoBERT, training/train_phobert.py, predict.py | Cùng bộ chia, checkpoint, Java/VnCoreNLP | Model/tokenizer/config, log/truncation, kết quả cùng schema, CLI và hướng dẫn chạy |
 
-- Việc: chuẩn bị dữ liệu thật được phép dùng, ẩn thông tin cá nhân, gán nhãn,
-  giải quyết needs_review, rà trùng; hoàn thiện validate/split; khóa bộ chia nhóm.
-- Đầu vào: bình luận nguyên văn, mã bài viết, labeling_guide và mẫu CSV.
-- Đầu ra: labeled CSV, train/validation/test, manifest, thống kê nguồn/nhãn và nhật ký gán nhãn.
-- Hoàn thành: validate pass; đủ ba nhãn mỗi tập, không giao id/post_id/text;
-  tái lập seed/hash; có mô tả lấy mẫu và kiểm tra chất lượng nhãn.
-- Báo cáo: dữ liệu, gán nhãn, chia tập, mất cân bằng và tính đại diện; điều phối ghép report/report.md, thống nhất thuật ngữ, số liệu và trích dẫn.
-- Câu hỏi: vì sao chia theo bài viết? neutral khác không rõ thế nào?
-  xử lý mỉa mai/bất đồng ra sao? còn rò rỉ gần trùng/người viết không?
-  tỷ lệ thực tế lệch 70/15/15 bao nhiêu?
+## Điều kiện bàn giao
 
-## Người 2 — Tiền xử lý và đặc trưng
+- Người 1: validate đạt, mỗi tập đủ ba nhãn; không giao ID/bài/nội dung;
+  truy vết nguồn/seed/hash và ghi đúng nguồn nhãn. Đợt rà người theo [hướng dẫn nhãn](labeling_guide.md).
+- Người 2: giữ phủ định/dấu hiệu cảm xúc, không ghi đè text gốc;
+  vocabulary/IDF chỉ fit train. Phối hợp người 3 về pipeline, người 4 về đầu vào PhoBERT riêng.
+- Người 3: chọn alpha/C/n-gram bằng Macro-F1 validation, chốt trước test;
+  lưu/tải giữ dự đoán, đủ độ đo ba nhãn; không báo decision score SVM thành xác suất.
+- Người 4: fine-tune thật, chọn checkpoint bằng validation, lưu thống kê cắt token;
+  predict không train lại. Smoke một bước chưa thay thế huấn luyện đầy đủ.
 
-- Việc: hoàn thiện normalize/tokenize/vectorizers; kiểm chứng Underthesea;
-  rà slang/emoji/stop words; thử n-gram và lưu ví dụ trước/sau.
-- Đầu vào: train, config, data contract, text gốc.
-- Đầu ra: hàm/transformer sklearn tái dùng, cấu hình BoW/TF-IDF, tài liệu lựa chọn.
-- Hoàn thành: giữ phủ định, không sửa CSV gốc; vocabulary/IDF chỉ fit train;
-  transformer lưu/tải joblib được; API thống nhất với người 3; PhoBERT có đường riêng.
-- Báo cáo: xử lý tiếng Việt, đặc trưng, n-gram và tham số.
-- Câu hỏi: BoW khác TF-IDF thế nào? bigram hỗ trợ phủ định ra sao?
-  vì sao không xóa mọi emoji/stop words? tách từ khác tokenizer subword thế nào?
-  tại sao không fit trên validation/test?
+Cả bốn rà nhãn độc lập, thảo luận bất đồng sau khi lưu nhãn riêng và cùng đọc lỗi.
+Người 1 ghép báo cáo; người 3 và 4 tổng hợp kết quả trên cùng manifest/test.
+Báo cáo phải ghi rõ nhãn AI, dữ liệu tổng hợp và thực nghiệm thật; không tự điền Kappa hoặc điểm chưa đo.
 
-## Người 3 — Truyền thống và đánh giá
+## Nhận và chia sẻ dữ liệu
 
-- Việc: train 4 tổ hợp và baseline; lưới nhỏ chọn Macro-F1 validation;
-  lưu pipeline; hoàn thiện metrics/evaluate/compare; đọc errors và chốt bảng thật.
-- Đầu vào: bộ chia khóa, preprocessing/vectorizer, classical.yaml.
-- Đầu ra: 5 artifact/metadata, validation search log, JSON/CSV metrics,
-  confusion matrix PNG/CSV, predictions/errors và bảng so sánh.
-- Hoàn thành: test không chọn tham số, cùng manifest; lưu/tải cùng dự đoán;
-  đủ metric 3 nhãn; SVM không có probability giả; chỉ tổng hợp lần đã evaluate.
-- Báo cáo: NB/SVM, tuning, baseline, kết quả truyền thống, lỗi.
-- Câu hỏi: giả định NB? C/alpha tác động gì? vì sao Macro-F1?
-  accuracy sai lệch khi nào? decision score khác probability thế nào?
-  nhãn nào thường bị nhầm và có bằng chứng gì?
+Người 1 đóng gói bộ tối giản bằng scripts/package_team_data.py theo [hợp đồng dữ liệu](data_contract.md).
+Thành viên clone code, cài package theo [README](../README.md), nhận gói dữ liệu riêng,
+sao chép data/ vào gốc clone rồi chạy verify/validate. Không thu thập lại để có cùng bộ đầu vào.
+Chỉ commit code/cấu hình/tests/tài liệu; không đưa dữ liệu Facebook thật lên kho công khai.
+Snapshot cũ trong handoff/ không tự cập nhật khi sửa workspace; phát hành gói mới nếu cần bàn giao lại.
 
-## Người 4 — PhoBERT và tích hợp
+## Báo cáo và phần tiếp theo
 
-- Việc: optional dependencies/Java/VnCoreNLP; kiểm chứng segmentation;
-  fine-tune cùng split, chọn checkpoint validation Macro-F1; lưu đầy đủ;
-  hoàn thiện predict/README, chạy tích hợp và ghép kết quả thật.
-- Đầu vào: bộ chia khóa, phobert.yaml, segmenter local và artifact classical.
-- Đầu ra: PhoBERT artifact/trainer log, metric cùng schema, CLI và tài liệu được kiểm chứng.
-- Hoàn thành: checkpoint/phiên bản tái lập; test tách khỏi train; predict không fit lại;
-  classical không cần torch/transformers; các thành viên chạy smoke.
-  PhoBERT đã kiểm chứng fine-tune một bước và lưu/tải/dự đoán; chưa chạy đầy đủ trên dữ liệu thật.
-- Báo cáo: PhoBERT, cấu hình hiện đại, tích hợp, hạn chế/kết luận, rà tài liệu tham khảo.
-- Câu hỏi: input PhoBERT cần gì? RDRSegmenter khác BPE thế nào?
-  checkpoint chọn ở đâu? truncation ảnh hưởng câu dài ra sao?
-  tài nguyên/thời gian thực bao nhiêu? so sánh có cùng test không?
+Viết tại [report/report.md](../report/report.md): giới thiệu → lý thuyết → dữ liệu/gán nhãn
+→ tiền xử lý → thiết kế thực nghiệm → kết quả → phân tích lỗi → hạn chế/kết luận → tài liệu tham khảo.
+Bản báo cáo cũ cần rà các khẳng định xác nhận người/Kappa và phiên bản kết quả trước khi dùng.
+Chỉ đưa số liệu truy vết được về output thực tế; phần chưa chạy phải ghi rõ.
 
-## Tích hợp
-
-Người 1 bàn giao bộ chia bất biến; người 2 bàn giao transformer đã kiểm tra;
-người 3/4 chạy độc lập cùng bộ chia. Người 4 chạy smoke và compare các metrics thực tế.
-Cả nhóm phân tích lỗi và hoàn thiện báo cáo, không điền số liệu giả.
-
-## File bổ sung cho giai đoạn dữ liệu thật
-
-- Người 1: configs/collection.yaml, data/collect.py, data/labeling.py, data/split.py; giữ chứng cứ nguồn và xác nhận nhãn.
-- Cả bốn: annotator_1.csv đến annotator_4.csv; gán độc lập phần cross_check, chưa dùng suggested_label làm gold.
-- Người 3: scripts/run_real.py train/evaluate, các module classical/training/evaluation; đọc docs/learning_guide.md về NB/SVM và độ đo.
-- Người 4: scripts/probe_public_sources.py (chỉ kiểm tra HTTP), configs/phobert_gpu4gb.yaml và CLI predict.
-- Bàn giao theo docs/real_data_workflow.md. Chưa hoàn thành dữ liệu/nhãn/train/test thật thì không gọi hoàn thành thực nghiệm.
+Bộ AI hiện tại đã chốt 2.600 dòng, chưa có nhãn người xác nhận.
+Bước thực nghiệm tiếp theo: người 2 chốt tiền xử lý; người 3/4 huấn luyện và
+đánh giá trên cùng bộ chia. Đây là việc tiếp theo, không chạy trong nhiệm vụ dọn tài liệu.
+Xem [phương pháp](methodology.md) và [hướng dẫn học](learning_guide.md) để giải thích phần mình.
