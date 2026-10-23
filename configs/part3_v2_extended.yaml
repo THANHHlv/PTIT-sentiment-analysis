@@ -1,0 +1,29 @@
+# Supplemental validation experiment: 2 ngrams x 3 C x 2 emoji x 2 weights x 2 feature modes.
+# Keep this model separate from the mandatory TF-IDF word + SVM model.
+models: [tfidf_svm]
+model_aliases: {tfidf_svm: tfidf_svm_extended}
+preprocessing:
+  lowercase: true
+  replace_urls: true
+  expand_slang: true
+  mask_sensitive: true
+  slang_map: {ko: "không", khum: "không", hok: "không"}
+  emoji: keep
+  stop_words: []
+  tokenizer: underthesea
+vectorizer:
+  min_df: 1
+  max_df: 1.0
+  max_features: 20000
+grid:
+  ngram_range: [[1, 1], [1, 2]]
+  svm_c: [0.1, 1.0, 10.0]
+  emoji: [keep, keep_and_map]
+  svm_class_weight: [null, balanced]
+  tfidf_mode: [word, word_char]
+  sublinear_tf: [false]
+svm:
+  max_iter: 10000
+  retry_max_iter: 100000
+  tol: 0.0001
+seed: 42

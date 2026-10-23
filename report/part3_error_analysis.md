@@ -1,54 +1,87 @@
-# Phân tích 25 câu sai — phần 3
+# Phân tích 25 câu sai — phiên bản NV2 mới, 12/10/2026
 
-Lần chạy: `part3_20261009_cpu`, dataset `ai_initial_4e93595ef7d1_seed42`.
-Phân tích **BoW+NB được chọn vì đứng đầu validation**, không chọn lại mô hình theo test.
-Mô hình sai 119/390 câu. Chọn có chủ đích 25 câu để bao phủ cả sáu hướng nhầm lớp;
-đây không phải mẫu ngẫu nhiên để ước lượng tỷ lệ loại lỗi. Toàn bộ 119 câu có ở
-`outputs/part3_20261009_cpu/evaluation/bow_nb/errors.csv`.
+Mô hình phân tích là **BoW + NB**, được chọn từ validation (Macro-F1=0,616621),
+không chọn bằng test. Có 119/390 dự đoán khác nhãn AI. Toàn bộ ví dụ dưới đây
+là trích đoạn thật đã đối chiếu trong `errors.csv`; đã bỏ tên người và không đưa ID Facebook.
+Trích đoạn có thể cắt đầu/cuối, không viết lại lời bình luận. Tên chứng chỉ/dịch vụ còn lại
+không phải tên người. E01–E25 là mã minh họa mới, không phải ID dữ liệu.
 
-Trích đoạn giữ cách viết gốc, dấu `…` chỉ phần lược bỏ, `[tên đã ẩn]` thay tên người.
-Không đưa ID Facebook hoặc tên người vào tài liệu này. Bảng đối chiếu ID/dòng local:
-`outputs/part3_20261009_cpu/error_analysis_25.csv`.
-“Nhãn thật” dưới đây là **nhãn AI đã khóa**, chưa được người xác nhận độc lập.
-Quan sát là nội dung và kết quả thực tế; cột giả thuyết chưa phải giải thích nhân quả đã chứng minh.
-Không sửa nhãn, tham số hoặc bộ chia từ những lỗi này.
+Mẫu được chọn có chủ đích để bao phủ sáu hướng nhầm, không ngẫu nhiên và không đại diện
+cho tần suất từng nguyên nhân. Quan sát dựa vào câu; giả thuyết chưa được kiểm định bằng
+trọng số từng token hay thí nghiệm can thiệp. Nhãn AI có thể sai hoặc thiếu ngữ cảnh;
+không đổi nhãn/tune mô hình sau phân tích này.
 
-| Mã | Trích đoạn đã ẩn thông tin nhận diện | Nhãn AI → dự đoán | Quan sát | Giả thuyết nguyên nhân |
-|---|---|---|---|---|
-| E01 | Thầy khó vs cho điểm thấp lắm bn | negative → neutral | Có phàn nàn về mức điểm và độ khó. | Từ viết tắt `vs`, `bn` và ngữ cảnh đánh giá giảng viên có thể chưa được biểu diễn đủ. |
-| E02 | Đây phải nhóm của chuẩn đoán bệnh đâu ... | negative → neutral | Dạng câu hỏi tu từ phản đối nội dung đăng. | Unigram không biểu diễn quan hệ `phải … đâu` và ý phê phán. |
-| E03 | chuột nhiều | negative → neutral | Câu chỉ có hai từ, không nêu đối tượng/bối cảnh. | Ít tín hiệu đánh giá trực tiếp; prior neutral có thể lấn át. Nhãn cũng cần được người rà theo bài gốc. |
-| E04 | Gẫy gần hết b ạ | negative → neutral | Có từ chỉ kết quả xấu, kèm viết tắt. | Cách viết `Gẫy` và câu thiếu đối tượng có thể khiến đặc trưng ít hữu ích. |
-| E05 | Ôn hết lms là đc tầm 40% rồi, nhưng nhớ lưu ý là lms sai khá nh | negative → neutral | Vừa hướng dẫn ôn vừa cảnh báo LMS sai. | Tín hiệu thông tin và bất mãn trộn lẫn; unigram không xác định sắc thái chiếm ưu thế. |
-| E06 | Nộp bài xong hoảng luôn mà | negative → neutral | Có biểu hiện lo sợ sau nộp bài. | Từ `hoảng` có thể chưa có trọng số đủ mạnh so với các từ thủ tục học tập. |
-| E07 | thi hết mình điểm hết hồn nha | negative → positive | Câu chơi chữ về điểm thi. | Mẫu `hết mình` có thể giống lời động viên; mô hình không hiểu phép đối `điểm hết hồn`. |
-| E08 | Anh này đc A+ mà hay nói phét quá à | negative → positive | Có điểm A+ tích cực và chê `nói phét`. | Tín hiệu khen/điểm tốt có thể lấn át mệnh đề chê sau `mà`. |
-| E09 | đã vote 1 sao, xin cảm ơn. | negative → positive | Chấm 1 sao đi cùng lời cảm ơn. | Không hiểu thang sao và sắc thái mỉa; `cảm ơn` có thể nghiêng về positive. |
-| E10 | Chỉ đi trong ds cty liên kết vs trường or thực tập tại trường | neutral → negative | Trả lời điều kiện nơi thực tập bằng nhiều từ viết tắt. | Từ hạn chế `chỉ` hoặc từ liên quan trường có thể gắn với negative trong train. |
-| E11 | … Mình cũng thi lại nên về việc bảo lưu mình đang hơi không hiểu | neutral → negative | Hỏi/trao đổi bảo lưu và thi lại. | `thi lại`, `không hiểu` có thể giống than phiền dù nhãn AI xem là trao đổi thông tin. |
-| E12 | Chẳng khó khăn gì , học hết kì 1 … | neutral → negative | Phủ định khó khăn, sau đó giải thích lịch học. | Giữ từ phủ định chưa đủ: unigram vẫn cộng tín hiệu của `khó khăn` độc lập. |
-| E13 | Có lẽ b nên hỏi trong nhóm tai nghe | neutral → negative | Đề nghị hỏi ở nhóm chuyên biệt. | Cách diễn đạt hướng người hỏi ra nhóm khác có thể giống lời bác bỏ trong train; cần ngữ cảnh để phân biệt. |
-| E14 | … đừng dại mà phi xe lên 2 tầng nha … | neutral → negative | Chỉ dẫn gửi xe có lời cảnh báo. | Từ cảnh báo mang sắc thái âm có thể khiến lời khuyên bị xem là phàn nàn. |
-| E15 | Qua môn thì dễ nhưng để điểm cao thì khó | neutral → positive | Nhận xét cân bằng giữa qua môn và điểm cao. | Hai vế trái chiều; tín hiệu `dễ` có thể thắng khi mô hình không xét quan hệ `nhưng`. |
-| E16 | Gửi thông tin A1 | neutral → positive | Yêu cầu thông tin rất ngắn. | Cụm hoặc token hiếm có thể chịu ảnh hưởng phân bố từ ở train; chưa đủ căn cứ xác định token gây lỗi. |
-| E17 | 10đ | neutral → positive | Chỉ một biểu thức điểm số. | Điểm cao có thể gắn với lời khen trong train, trong khi nhãn cần ngữ cảnh bài viết. |
-| E18 | Của các bạn học chất lượng cao nhaa | neutral → positive | Thông tin về chương trình chất lượng cao. | Cụm tên chương trình chứa các từ đánh giá `chất lượng`, `cao`, dễ bị hiểu thành khen. |
-| E19 | Chỉ một từ thôi "Vuýpppp" | positive → negative | Dùng biến thể kéo dài/không chuẩn để khen. | Không có quy tắc chuẩn hóa biến thể này; mô hình có thể thiếu tín hiệu tích cực hữu ích. |
-| E20 | Công nhận TADA đi rẻ vch | positive → negative | Khen giá rẻ nhưng có tiếng lóng mạnh. | Từ lóng có thể gắn với negative trong train và lấn át `rẻ`/`công nhận`. |
-| E21 | Rất đánh giá cao những mong muốn và câu hỏi của [tên đã ẩn] ha. | positive → negative | Có lời ghi nhận rõ `đánh giá cao`. | Cách viết lịch sự/độ dài và các từ nội dung có thể khác mẫu khen train; chưa kiểm tra đóng góp từng từ. |
-| E22 | Aptis thì dễ nhất, IELTS thì sau đi làm ổn nhất nha | positive → neutral | Khuyến nghị tích cực giữa hai chứng chỉ. | Tên chứng chỉ và cấu trúc tư vấn có thể khiến mô hình nghiêng về trao đổi thông tin. |
-| E23 | chỉ biết là mấy bạn học chăm, điểm học bổng cao lắm | positive → neutral | Khen học chăm và điểm học bổng cao. | Tín hiệu thành tích chen giữa nhiều từ thông tin học tập; có thể bị prior neutral lấn át. |
-| E24 | Không gì là không thể e ạ | positive → neutral | Câu động viên có phủ định kép. | Unigram không kết hợp hai phủ định để suy ra ý khích lệ. |
-| E25 | Thừa sức bro ơi | positive → neutral | Động viên ngắn, có tiếng Anh khẩu ngữ. | Cụm động viên/ngữ cảnh gọi bạn có thể ít mẫu hoặc thiếu trọng số đủ mạnh. |
+Bằng chứng: `outputs/part3_20261012_nv2_v2/anonymized_error_examples.csv`;
+`error_example_links_local.json` giữ ánh xạ/hash để đối soát local, không đưa vào báo cáo/kho công khai.
 
-## Quan sát định lượng trên toàn test
+## Nhãn AI negative → neutral (tổng 34 câu; minh họa 5 câu)
 
-BoW+NB có 24 positive và 33 negative bị đoán neutral; đồng thời 16 neutral bị đoán positive,
-31 neutral bị đoán negative, 9 positive bị đoán negative và 6 negative bị đoán positive.
-Tổng là 119 lỗi. Như vậy mô hình không chỉ bỏ sót cảm xúc mà còn gán cảm xúc cho câu thông tin.
-Recall positive=0,34, negative≈0,4348; kết quả này cho thấy hạn chế trên hai lớp nhỏ.
+| Mã | Trích đoạn | Quan sát | Giả thuyết cần kiểm tra |
+|---|---|---|---|
+| E01 | khê | Câu chỉ có một từ, thiếu ngữ cảnh. | Từ hiếm/ngắn có thể không đủ tín hiệu; nhãn AI cần rà độc lập. |
+| E02 | Thầy khó vs cho điểm thấp lắm bn | Có cụm “khó”, “điểm thấp”, viết tắt vs/bn. | Slang và cách kết hợp từ có thể làm tín hiệu chê yếu đi. |
+| E03 | Đây phải nhóm của chuẩn đoán bệnh đâu ... | Câu phản bác, không dùng dạng “không” trực tiếp. | BoW khó biểu diễn phạm vi phủ định và ý phê bình. |
+| E04 | Sinh viên vẫn đi từ tầng G lên ầm ầm. Xếp hàng đợi trên tầng 1 thang lên từ tầng G chật cứng coi có tức không. | Có mô tả sự việc lẫn câu hỏi “có tức không”. | Từ thông tin có thể lấn tín hiệu bất mãn; đây là giả thuyết. |
+| E05 | chuột nhiều | Hai từ mô tả hiện tượng, nhãn AI là negative. | Thiếu đối tượng/ngữ cảnh khiến cảm xúc khó xác định. |
 
-Những giả thuyết từ bảng gồm thiếu ngữ cảnh bài/đoạn hội thoại, tiếng lóng/biến thể viết,
-phủ định phức hợp, mỉa mai và câu trộn sắc thái. Đây là hướng cho **nghiên cứu sau**;
-không chỉnh pipeline sau khi đã mở test của lần chạy này.
-Nhãn AI ở câu ngắn/đa nghĩa cũng có thể sai; cần người rà độc lập trước khi kết luận lỗi thuộc mô hình.
+## Nhãn AI negative → positive (tổng 6 câu; minh họa 5 câu)
+
+| Mã | Trích đoạn | Quan sát | Giả thuyết cần kiểm tra |
+|---|---|---|---|
+| E06 | bài kiểu ý làm căng lém e ơi | Có slang “lém”, câu than khó. | Biến thể viết có thể không trùng từ cảm xúc đã học. |
+| E07 | thi hết mình điểm hết hồn nha | Cấu trúc hai vế, sắc thái gây bất ngờ ở vế sau. | Token tích cực ở vế đầu có thể dẫn tới positive. |
+| E08 | Anh này đc A+ mà hay nói phét quá à | Trộn thành tích A+ và chê “nói phét”. | BoW không thể hiện quan hệ tương phản giữa hai vế. |
+| E09 | t buồn lắm | Có từ cảm xúc trực tiếp “buồn”. | Một từ đúng nghĩa vẫn có thể thua prior hoặc các trọng số khác; cần xem tham số mới kết luận. |
+| E10 | đã vote 1 sao, xin cảm ơn. | Có “1 sao” và lời cảm ơn trong cùng câu. | Ý mỉa mai có thể bị đọc theo token lịch sự/tích cực. |
+
+## Nhãn AI neutral → negative (tổng 30 câu; minh họa 4 câu)
+
+| Mã | Trích đoạn | Quan sát | Giả thuyết cần kiểm tra |
+|---|---|---|---|
+| E11 | Chỉ đi trong ds cty liên kết vs trường or thực tập tại trường | Nêu phạm vi lựa chọn, nhiều viết tắt. | Các từ ràng buộc có thể gần những câu phàn nàn đã học. |
+| E12 | Bạn thi lại à, bạn thi lại thì connect mình với. Mình cũng thi lại nên về việc bảo lưu mình đang hơi không hiểu | Hỏi kết nối và nêu việc không hiểu thủ tục. | Từ “thi lại”, “không hiểu” có thể gợi negative dù AI gán neutral. |
+| E13 | Chẳng khó khăn gì , học hết kì 1 | Phủ định khó khăn trong câu giải thích. | BoW không diễn giải đầy đủ “chẳng ... gì”; bigram chưa được chọn. |
+| E14 | Có lẽ b nên hỏi trong nhóm tai nghe | Đề nghị hỏi ở nhóm khác. | Lời góp ý có thể gần cách phản bác; nhãn cũng phụ thuộc ngữ cảnh hội thoại. |
+
+## Nhãn AI neutral → positive (tổng 17 câu; minh họa 3 câu)
+
+| Mã | Trích đoạn | Quan sát | Giả thuyết cần kiểm tra |
+|---|---|---|---|
+| E15 | Qua môn thì dễ nhưng để điểm cao thì khó | Câu so sánh hai mục tiêu, có cả dễ và khó. | Token “dễ”, “điểm cao” có thể lấn vế tương phản. |
+| E16 | Gửi thông tin A1 | Yêu cầu cung cấp thông tin, không có khen rõ. | Liên hệ thống kê của A1 hoặc các từ ít ỏi có thể chi phối nhãn. |
+| E17 | Nàng thơ có tội tình j hã | Câu hỏi mang tính hội thoại, viết tắt j. | Thiếu ngữ cảnh và sắc thái hỏi tu từ; chưa đủ để khẳng định nhãn AI đúng. |
+
+## Nhãn AI positive → negative (tổng 8 câu; minh họa 4 câu)
+
+| Mã | Trích đoạn | Quan sát | Giả thuyết cần kiểm tra |
+|---|---|---|---|
+| E18 | may quá toàn đi bộ | Có từ “may quá” thể hiện nhẹ nhõm. | Từ nội dung có thể lấn tín hiệu cảm xúc ngắn. |
+| E19 | chỉ muốn ở đây luôn :))) | Muốn ở lại và có emoticon văn bản. | Emoticon ASCII không được xử lý như emoji Unicode; cần kiểm tra vocabulary trước kết luận. |
+| E20 | Chỉ một từ thôi "Vuýpppp" | Từ nhấn mạnh bằng kéo dài ký tự. | Chưa chuẩn hóa kéo dài chữ nên dễ thành token hiếm. |
+| E21 | Công nhận TADA đi rẻ vch | Lời công nhận giá rẻ, kèm viết tắt nhấn mạnh. | Slang có thể gắn với nhiều sắc thái; BoW thiếu quan hệ lời khen. |
+
+## Nhãn AI positive → neutral (tổng 24 câu; minh họa 4 câu)
+
+| Mã | Trích đoạn | Quan sát | Giả thuyết cần kiểm tra |
+|---|---|---|---|
+| E22 | cảm ơn b | Lời cảm ơn ngắn, viết tắt b. | Có thể thiếu đủ đặc trưng để thắng prior neutral. |
+| E23 | pldc đc trắc nghiệm là êm r | Nhận xét thuận lợi về hình thức thi, nhiều viết tắt. | Từ biểu đạt tích cực không được mở rộng tự động trong slang map an toàn. |
+| E24 | Aptis thì dễ nhất, IELTS thì sau đi làm ổn nhất nha | So sánh tích cực về hai chứng chỉ. | Token thông tin/tên riêng có thể chi phối hơn “dễ”, “ổn”. |
+| E25 | chỉ biết là mấy bạn học chăm, điểm học bổng cao lắm | Có lời khen chăm học và điểm cao. | Câu thông tin xen khen có thể gần neutral trong dữ liệu train. |
+
+## Nhận xét từ toàn bộ test
+
+BoW+NB nhầm 24/50 positive và 34/69 negative thành neutral. Hai hướng này chiếm
+58/119 lỗi, khoảng 48,7%. Có câu ngắn, slang, phủ định gián tiếp, mỉa mai và trộn sắc thái
+trong mẫu đã đọc; chưa gán taxonomy thủ công cho toàn bộ 119 lỗi nên không báo tỷ lệ
+từng nguyên nhân. `error_groups.csv` chỉ dùng dấu hiệu tự động và các nhóm có giao nhau.
+
+Nhánh word-char có 0 vector 0 ở validation, nhưng không giải quyết mọi câu đa nghĩa hoặc
+thiếu ngữ cảnh. Điểm test của nó cao hơn TF-IDF word + SVM về Macro-F1, song đây là
+so sánh bổ sung trên test đã dùng trước đó, không chứng minh quan hệ nhân quả hoặc ưu thế phổ quát.
+
+Bước tiếp theo của nhóm là rà nhãn độc lập ở dữ liệu mới, thêm ngữ cảnh khi được phép,
+và đánh giá mô hình đã chốt trên test mới mang nhãn người. Không tiếp tục dùng các lỗi
+ở đây để chỉnh tham số rồi gọi điểm của chính test này là đánh giá độc lập.
+
+Xem [báo cáo thực nghiệm](report.md) và [bàn giao](../docs/part3_handoff.md).

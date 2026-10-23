@@ -3,6 +3,13 @@
 Cả nhóm dùng cùng package, [hợp đồng dữ liệu](data_contract.md), labels.py và manifest.
 Mỗi người làm nhánh riêng trong cùng kho; không tự chia lại dữ liệu trên từng máy.
 
+**Bản hoàn thiện người 3 — 21/10/2026:** đã tích hợp NV2, train/evaluate
+bốn pipeline + baseline và word-char+SVM bổ sung; 67 tests đạt, đủ kết quả validation/test.
+[Bàn giao hiện hành](part3_handoff.md) và [báo cáo](../report/report.md);
+gói `handoff/NV3_20261021.zip` có verifier sau giải nén.
+Kết quả nhãn AI trên test đã dùng; người 4 tiếp tục PhoBERT cùng manifest,
+nhóm chuẩn bị nhãn người/test mới để xác nhận độc lập.
+
 | Người | Phần phụ trách | Đầu vào | Đầu ra cần bàn giao |
 |---|---|---|---|
 | 1 | data/, điều phối gán nhãn, ghép báo cáo | Bình luận thật và hồ sơ nguồn, nhãn thành viên | CSV nhãn, bộ chia/manifest, thống kê nguồn/nhãn, phần báo cáo dữ liệu |
@@ -37,10 +44,9 @@ Snapshot cũ trong handoff/ không tự cập nhật khi sửa workspace; phát 
 
 Viết tại [report/report.md](../report/report.md): giới thiệu → lý thuyết → dữ liệu/gán nhãn
 → tiền xử lý → thiết kế thực nghiệm → kết quả → phân tích lỗi → hạn chế/kết luận → tài liệu tham khảo.
-Bản báo cáo cũ cần rà các khẳng định xác nhận người/Kappa và phiên bản kết quả trước khi dùng.
 Chỉ đưa số liệu truy vết được về output thực tế; phần chưa chạy phải ghi rõ.
 
 Bộ AI hiện tại đã chốt 2.600 dòng, chưa có nhãn người xác nhận.
-Bước thực nghiệm tiếp theo: người 2 chốt tiền xử lý; người 3/4 huấn luyện và
-đánh giá trên cùng bộ chia. Đây là việc tiếp theo, không chạy trong nhiệm vụ dọn tài liệu.
+Phần người 2/3 đã tích hợp và thực nghiệm. Người 4 tiếp tục fine-tune PhoBERT trên
+đúng bộ chia; cả nhóm chuẩn bị nhãn người độc lập để xác nhận chất lượng.
 Xem [phương pháp](methodology.md) và [hướng dẫn học](learning_guide.md) để giải thích phần mình.

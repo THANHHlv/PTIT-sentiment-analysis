@@ -95,7 +95,7 @@ def verify_compact(directory, split_dir, output):
               'label_source_counts': dict(Counter(source['label_source'])),
               'splits': {n: len(f) for n, f in frames.items()}, 'split_checks': metadata['checks'],
               'all_split_rows_equal_labeled_source': True, 'ai_never_human_confirmed': True,
-              'source_audit_note': 'Raw/checkpoint/unresolved/excluded archived outside data; original audit in outputs/data_audit.json.',
+              'source_audit_note': 'Raw/checkpoint/unresolved/excluded archived outside data; original audit in outputs/archives/project_cleanup_20261023.zip (entry outputs/data_audit.json).',
               'scope': 'Validate current labeled data and splits only; no collection or training.'}
     write_json(output, report)
     print({k: report[k] for k in ['storage_layout', 'labeled_rows', 'label_counts', 'splits', 'split_checks']})

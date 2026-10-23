@@ -1,110 +1,71 @@
-# Phương pháp và lựa chọn triển khai
+# Phương pháp thực nghiệm
 
-## Luồng
+## Dữ liệu và bộ chia
 
-Bộ AI hiện tại đã chia sẵn; dùng data/splits cho mọi mô hình.
-Schema, phiên bản và lệnh kiểm tra ở [hợp đồng dữ liệu](data_contract.md).
+Dùng nguyên bộ ai_initial_4e93595ef7d1_seed42: 2.600 bình luận thật mang nhãn AI,
+train/validation/test = 1.801/409/390. Chia theo post_id và ràng buộc trùng/gần trùng,
+seed 42; tỷ lệ thực tế ghi trong manifest. ID, bài và nội dung chuẩn hóa không giao nhau.
+Nhãn AI đo mức phù hợp với bộ nhãn AI, chưa thay đánh giá bằng nhãn người độc lập.
 
-CSV gốc → validate → group split theo post_id → fit train → chọn Macro-F1 validation →
-lưu artifact → evaluate test riêng → compare → phân tích errors.csv.
-Baseline dùng nhãn phổ biến nhất train. Không fit vectorizer trước split.
-Pipeline tốt nhất giữ nguyên từ train; không refit train+validation trong khung này.
+Không chia lại bộ hiện hành. Quy trình với dữ liệu mới: validate → chia theo bài →
+fit train → chọn Macro-F1 validation → khóa artifact → evaluate test → phân tích lỗi.
+[Hợp đồng dữ liệu](data_contract.md) quy định schema và nguồn nhãn.
 
-Bộ chia tìm nhóm với seed, tối thiểu hóa sai lệch tỷ lệ dòng và phân bố nhãn, ràng buộc đủ ba nhãn.
-Đây là heuristic hữu hạn, không phải nghiệm tối ưu; tỷ lệ dòng xấp xỉ do kích thước nhóm.
-Xem tỷ lệ thực tế trong manifest. Chia bài viết giảm rò rỉ ngữ cảnh nhưng không loại hết
-rò rỉ từ cùng người viết hay nội dung gần trùng.
+## Tiền xử lý và đặc trưng
 
-## Tiền xử lý truyền thống
+Cấu hình thực nghiệm: [part3_v2.yaml](../configs/part3_v2.yaml).
+Chuẩn hóa NFC/khoảng trắng/ký tự lỗi, lowercase, thay URL và che email/điện thoại/@handle.
+Mở rộng ko/khum/hok → không; giữ k/dc/đc/mn/sv vì đa nghĩa. Giữ emoji, dấu câu,
+không bỏ stop words và phủ định. Underthesea nối từ nhiều âm tiết bằng underscore.
+Text gốc không bị ghi đè. Các từ điển quy tắc không được sửa theo lỗi test.
 
-| Bước | Lý do | Mặc định |
-|---|---|---|
-| NFC/khoảng trắng | Đồng nhất biểu diễn ký tự, tránh token rỗng | Bật |
-| Lowercase | Giảm biến thể vocabulary | Bật |
-| URL → urltoken | Giảm URL riêng nhưng giữ tín hiệu có liên kết | Bật |
-| Slang rõ nghĩa | ko/k/khum/hok → không, dc/đc → được, mn → mọi người, sv → sinh viên | Bật, tắt được |
-| Emoji | Giữ sắc thái | keep; có remove/map |
-| Stop words | Tránh mất ngữ cảnh/phủ định | Danh sách rỗng |
-| Underthesea word_tokenize(format='text') | Ghép từ tiếng Việt nhiều âm tiết bằng underscore | Bắt buộc classical |
+BoW dùng CountVectorizer; TF-IDF dùng TfidfVectorizer với smooth_idf, chuẩn L2.
+Vocabulary và IDF chỉ học train. Thử word n-gram (1,1)/(1,2), min_df=1,
+max_df=1.0, max_features=20000. Nhánh bổ sung nối TF-IDF word và char_wb (3,5),
+chuẩn L2 từng nhánh, không chuẩn hóa lại sau nối.
 
-Trước: “  SV ko  thích lịch học 😢 https://example.org  ”.
-Sau normalize mặc định: “sinh viên không thích lịch học 😢 urltoken”.
-Sau tách từ, từ nhiều âm tiết như sinh_viên nối underscore.
-Đầu ra thực tế phụ thuộc phiên bản, được lưu tại preprocessing_example.json của smoke test.
-Stop words khai báo theo token; “sinh viên” đổi thành sinh_viên.
-Từ/cụm chứa không/chưa/chẳng/chả/đừng bị từ chối trong stop words.
-Không xóa số/dấu câu mặc định. Vectorizer dùng tokenizer khoảng trắng giữ token emoji/dấu câu.
-Slang phụ thuộc ngữ cảnh: k có thể là biến toán; cân nhắc tắt expand_slang trong nội dung kỹ thuật.
-Không sửa từ điển theo test.
+## Chọn mô hình truyền thống
 
-## Đặc trưng/mô hình truyền thống
+Bốn tổ hợp BoW/TF-IDF × MultinomialNB/LinearSVC, mỗi tổ hợp sáu ứng viên:
+alpha NB=0.1/0.5/1 hoặc C SVM=0.1/1/10 kết hợp hai word n-gram. Tổng 24 lượt fit.
+Baseline học nhãn phổ biến nhất train, hiện là neutral.
 
-BoW: CountVectorizer; TF-IDF: TfidfVectorizer (smooth_idf và chuẩn L2 mặc định).
-Vocabulary/IDF chỉ học khi pipeline.fit(train).
-Thử unigram và unigram+bigram, min_df/max_df/max_features trong YAML.
-NB dùng alpha 0.5/1; LinearSVC dùng C 0.5/1, random_state cố định.
-Mỗi tổ hợp có 4 ứng viên, chọn Macro-F1 validation; hòa lấy ứng viên trước theo YAML.
-Không dùng test chọn tham số. Có thể mở rộng lưới trước thực nghiệm chính thức.
-Tham khảo [Pipeline](https://scikit-learn.org/1.5/modules/generated/sklearn.pipeline.Pipeline.html),
-[NB](https://scikit-learn.org/1.5/modules/generated/sklearn.naive_bayes.MultinomialNB.html),
-[LinearSVC](https://scikit-learn.org/1.5/modules/generated/sklearn.svm.LinearSVC.html).
+[part3_v2_extended.yaml](../configs/part3_v2_extended.yaml) thử riêng TF-IDF + SVM:
+2 n-gram × 3 C × 2 emoji × 2 class weights × 2 biểu diễn = 48 ứng viên.
+Dùng tên tfidf_svm_extended để phân biệt bốn tổ hợp bắt buộc.
+Emoji keep_and_map không đổi đầu vào ở bộ này do không có emoji thuộc bảng ánh xạ;
+chưa thể kết luận hiệu quả mapping từ điểm bằng nhau.
+
+Chọn bằng Macro-F1 validation, đủ ba nhãn, zero_division=0; hòa lấy ứng viên đầu
+trong YAML. Không refit train+validation. BoW+NB được chọn làm mô hình chính.
+Các pipeline đã khóa trước lệnh test của lần 12/10. Test từng được dùng ngày 09/10,
+nên lần 12/10 là so sánh bổ sung trên cùng test, chưa phải xác nhận độc lập.
+Không chỉnh tham số hoặc nhãn tiếp theo lỗi test này.
+
+## Đánh giá và truy vết
+
+Xuất Accuracy, Precision/Recall/F1/support từng nhãn, Macro-P/R/F1;
+confusion matrix hàng nhãn thật, cột dự đoán, thứ tự positive/neutral/negative.
+Compare chỉ nhận cùng manifest, test hash, provenance và số mẫu.
+SVM decision score không phải xác suất hay độ mạnh cảm xúc.
+
+outputs/part3_20261012_nv2_v2/ giữ lịch sử lựa chọn, metadata, khóa SHA-256,
+ma trận, dự đoán, lỗi và audit. outputs/part3_completion_20261021/ giữ kết quả
+validation và lựa chọn chính. [Bằng chứng báo cáo](../report/evidence/README.md)
+được xuất từ các kết quả này, không chứa text bình luận.
+25 trích đoạn lỗi đã ẩn danh là mẫu định tính có chủ đích; tách quan sát và giả thuyết,
+không dùng để suy ra tỷ lệ nguyên nhân của cả bộ.
 
 ## PhoBERT
 
-vinai/phobert-base, Transformers 4.44.2, tối đa 256 token gồm special tokens.
-NFC/khoảng trắng → RDRSegmenter VnCoreNLP (chuẩn hóa dấu/tách từ theo công cụ) →
-tokenizer use_fast=False → truncation → padding động.
-Giữ hoa thường/URL/slang/emoji/stop words, không áp toàn bộ cleaning classical.
-Ví dụ “Sinh viên học ở Học viện.” có dạng phân đoạn “Sinh_viên học ở Học_viện .”;
-xác nhận đầu ra cụ thể bằng VnCoreNLP thực dùng.
-Input phải tách từ và tác giả khuyến nghị RDRSegmenter:
-[tài liệu tác giả PhoBERT](https://github.com/VinAIResearch/PhoBERT).
+Code fine-tune có trong [train_phobert.py](../src/ptit_sentiment/training/train_phobert.py),
+nhưng chưa có mô hình PhoBERT huấn luyện trên bộ chia hiện hành.
+Checkpoint smoke và mô hình trên bộ chia cũ được lưu trong ZIP dọn dự án,
+không đưa điểm cũ vào bảng so sánh hiện tại.
 
-AutoModelForSequenceClassification dùng 3 nhãn từ labels.py.
-Trainer đánh giá/lưu mỗi epoch, load_best_model_at_end theo validation eval_macro_f1.
-Config chứa batch/learning rate/epoch/weight decay/seed/fp16/use_cpu.
-[Trainer 4.44.2](https://huggingface.co/docs/transformers/v4.44.2/main_classes/trainer)
-dùng eval_strategy; package ghim phiên bản này.
-Inference local_files_only=True, không tải lại checkpoint.
-Ghim revision bằng commit trước chạy chính thức; metadata lưu commit nếu có.
-VnCoreNLP cần Java/model local, không fallback sang bộ tách từ khác.
-
-## Đánh giá
-
-Accuracy: tỷ lệ đúng; P/R/F1 từng nhãn; support: số mẫu thật.
-Macro-P/R/F1 là trung bình không trọng số ba nhãn, hữu ích khi mất cân bằng.
-Confusion matrix hàng thật, cột dự đoán. Baseline và mọi mô hình cùng test.
-Không suy ra chất lượng tổng quát từ dữ liệu tổng hợp.
-Phân tích errors.csv: phủ định, slang, mỉa mai, hỗn hợp, thiếu ngữ cảnh, tách từ, truncation, nhãn nghi vấn.
-Không sửa test theo dự đoán để nâng điểm.
-
-## Bổ sung tiền xử lý và kiểm chứng
-
-Bảng slang_map trong classical.yaml thay thế toàn bộ mapping mặc định nếu được truyền vào;
-mapping rỗng {} nghĩa là không có thay thế tiếng lóng. expand_slang=false tắt bước này.
-mask_sensitive=true che email/điện thoại VN/@handle bằng emailtoken/phonetoken/usertoken.
-basic_normalize loại BOM, zero-width-space; ký tự điều khiển và U+FFFD đổi thành khoảng trắng.
-Không đoán lại nội dung đã mất do mã hóa sai; nguồn lỗi nặng cần được người 1 xem xét.
-
-PhoBERT có cùng tùy chọn che thông tin nhạy cảm, nhưng không lowercase/thay URL/mở rộng slang.
-preprocessing/phobert_input.py đo độ dài gồm special tokens trước truncation bên phải.
-Nếu phần kết luận cảm xúc nằm cuối, cắt văn bản có thể đổi thông tin mô hình nhìn thấy;
-phải báo tỷ lệ mẫu bị cắt theo từng tập thực nghiệm.
-configs/phobert_smoke.yaml là kiểm tra một bước trên đúng checkpoint;
-không được dùng điểm smoke để so chất lượng với mô hình đã huấn luyện đầy đủ.
-
-## Trạng thái kiểm chứng và giới hạn
-
-Các lần chạy dưới đây là bằng chứng lịch sử ngày 03/10/2026, không phải kết quả của bộ AI hiện tại:
-
-| Lần chạy | Phạm vi | Bằng chứng local |
-|---|---|---|
-| complete_20261003 | Classical + baseline, lưu/tải, đánh giá và dự đoán trên 60 câu tổng hợp | outputs/complete_20261003/verification.json |
-| phobert_verified_20261003 | PhoBERT fine-tune một bước, lưu/tải, evaluate/predict trên bộ tổng hợp | outputs/phobert_verified_20261003/verification.json |
-
-Smoke PhoBERT dùng RTX 3050 Laptop 4 GB, batch 1, max_length 64;
-không thay fine-tune đầy đủ. Chưa kiểm chứng cài mới hoàn toàn trên máy thành viên khác.
-Không dùng điểm minh họa hoặc kết quả của phiên bản nhãn cũ làm điểm bộ AI hiện tại.
-Kết quả thực nghiệm mới phải có artifact, log và metrics khớp manifest hiện hành.
-Test nhãn AI đo mức phù hợp với nhãn AI; cần nhãn người độc lập để đánh giá thêm.
-Báo cáo tại [report/report.md](../report/report.md) cần rà lại khẳng định nhãn người/Kappa và phiên bản kết quả.
+Đầu vào riêng: NFC/khoảng trắng → RDRSegmenter VnCoreNLP → tokenizer PhoBERT
+use_fast=False → truncation bên phải → padding động. Giữ hoa thường/URL/slang/emoji;
+không áp toàn bộ cleaning của mô hình truyền thống. Giới hạn tối đa 256 token kể cả
+special tokens; code ghi thống kê mẫu bị cắt từng tập. Java và VnCoreNLP model cần sẵn.
+Chọn checkpoint theo Macro-F1 validation, dùng cùng manifest và ánh xạ nhãn.
+Xem [hướng dẫn chạy](../README.md) và [tài liệu học](learning_guide.md).

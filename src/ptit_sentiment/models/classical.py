@@ -16,14 +16,9 @@ def make_pipeline(feature, algorithm, config, ngram_range, parameter, *, emoji=N
     if algorithm == "nb":
         classifier = MultinomialNB(alpha=parameter)
     elif algorithm == "svm":
-<<<<<<< HEAD
-        classifier = LinearSVC(C=parameter, random_state=config.get("seed", 42),
+        classifier = LinearSVC(C=parameter, class_weight=class_weight, random_state=config.get("seed", 42),
                                dual="auto", max_iter=config.get("svm", {}).get("max_iter", 10000),
                                tol=config.get("svm", {}).get("tol", 1e-4))
-=======
-        classifier = LinearSVC(C=parameter, class_weight=class_weight, random_state=config.get("seed", 42),
-                               dual="auto", max_iter=10000)
->>>>>>> main
     else:
         raise ValueError(f"Thuật toán không hỗ trợ: {algorithm}.")
     preprocessing = dict(config.get("preprocessing", {}))

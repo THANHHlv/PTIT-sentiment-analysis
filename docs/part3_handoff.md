@@ -1,97 +1,126 @@
-# Bàn giao người 3 → người 4 — 09/10/2026
+# Bàn giao phần người 3 — bản hiện hành
 
-Đã train/evaluate bốn mô hình truyền thống và majority baseline bằng CPU trên dữ liệu thật,
-nhãn AI ban đầu. Không triển khai/chạy PhoBERT trong nhiệm vụ này. Không thu thập, đổi nhãn hay chia lại.
+Hoàn thiện và kiểm chứng lại ngày 21/10/2026. Phần người 3 gồm NB, SVM, baseline, đánh giá,
+phân tích lỗi và báo cáo truyền thống. Sử dụng mô hình đã khóa của
+part3_20261012_nv2_v2; không train/refit lại và không chọn bằng test.
 
-## Artifact và dữ liệu dùng chung
+## Đầu vào và trạng thái
 
-- Artifact: `artifacts/part3_20261009_cpu/{bow_nb,tfidf_nb,bow_svm,tfidf_svm,majority_baseline}.joblib`.
-- Mỗi artifact có `.metadata.json`: ánh xạ nhãn, hash artifact/config/CSV/manifest,
-  nguồn nhãn, phiên bản thư viện, cấu hình được chọn, seed, thời gian và chính sách fit.
-- Config: `configs/part3.yaml`; log mọi ứng viên: `outputs/part3_20261009_cpu/training/`.
-- Kết quả: `outputs/part3_20261009_cpu/evaluation/<model>/`; bảng `comparison.csv`, biểu đồ `comparison.png`.
-- Bộ chia: **chính ba CSV ở `data/splits/`**, không lấy bộ cũ trong ZIP hoặc `real_v1`.
-- Dataset: `ai_initial_4e93595ef7d1_seed42`, train/validation/test = 1801/409/390, seed 42.
-- Manifest SHA-256: `c743878f73ef20ef786f46f46c62511b894a10891c2893de8d75cb753522e4e3`.
-- Nhãn duy nhất: `positive:0`, `neutral:1`, `negative:2`, nguồn ở `src/ptit_sentiment/labels.py`.
-  `model.classes_` có thể theo thứ tự khác; luôn ánh xạ bằng tên lớp, không gán cột xác suất theo vị trí giả định.
+2.600 bình luận thật: positive 362, neutral 1800, negative 438.
+Train/validation/test = **1801/409/390**, seed 42, chia theo nhóm bài/ràng buộc trùng.
+Dataset ai_initial_4e93595ef7d1_seed42.
+Manifest SHA-256: c743878f73ef20ef786f46f46c62511b894a10891c2893de8d75cb753522e4e3.
+Không đổi nhãn hoặc chia lại.
 
-## Giao diện tải và dự đoán
+| Đầu ra | Trạng thái |
+|---|---|
+| Bốn pipeline bắt buộc | BoW/TF-IDF word × MultinomialNB/LinearSVC đã train |
+| Majority baseline | Học neutral từ train, đánh giá cùng test |
+| Chọn tham số | 24 ứng viên bắt buộc; Macro-F1 validation, không refit |
+| Bổ sung | 48 ứng viên TF-IDF word/word-char + SVM, tên riêng |
+| Test và validation | Đủ Accuracy, per-label/macro P/R/F1, support, ma trận và dự đoán/lỗi |
+| Phân tích lỗi | 25 trích đoạn thật đã ẩn danh, đối chiếu từng dòng và hash |
+| Kiểm thử | 67/67 tests đạt, fixture tách khỏi thực nghiệm |
+| Gói bàn giao | handoff/NV3_20261021.zip, kèm hash và verifier sau giải nén |
 
-```python
+
+## Quyết định dùng nhãn AI ngày 21/10/2026
+
+Theo yêu cầu của người dùng, tiếp tục dùng bộ nhãn AI ban đầu cho phần người 3.
+Bản điền đủ 390 nhãn: outputs/test_ai_labeled_20261021/test_390_ai_labeled.xlsx.
+390 nhãn được lấy đúng từ test.csv hiện hành, không gán lại bằng dự đoán NB/SVM.
+Tất cả giữ label_source=ai, annotation_status=ai_labeled.
+25 nhãn người dùng nhập vẫn là bản nháp pending_review, giữ riêng trong file gốc
+và sheet Nhan_ban_da_nhap; 5 bất đồng được lưu để đối chiếu, không tự nhận là nhãn người xác nhận.
+Không đổi nhãn/bộ chia/artifact; điểm số và lựa chọn validation giữ nguyên.
+
+## Kết quả và lựa chọn chính
+
+| Mô hình | Macro-F1 validation | Accuracy test | Macro-F1 test |
+|---|---:|---:|---:|
+| BoW + NB | **0.616621** | 0.694872 | 0.544067 |
+| TF-IDF word + NB | 0.504317 | 0.723077 | 0.466176 |
+| BoW + SVM | 0.558472 | 0.710256 | 0.547529 |
+| TF-IDF word + SVM | 0.577487 | 0.717949 | 0.535355 |
+| Majority baseline | 0.272640 | 0.694872 | 0.273323 |
+| TF-IDF word-char + SVM (bổ sung) | 0.605381 | 0.707692 | 0.563401 |
+
+**Mô hình chính: BoW + NB**, chọn từ validation, unigram và alpha=0.1.
+Không thay lựa chọn theo thứ hạng test. primary_model.json ghi tên/artifact SHA/metric chọn.
+Chi tiết: [báo cáo](../report/report.md).
+
+## Artifact và bằng chứng
+
+- artifacts/part3_20261012_nv2_v2/: bốn pipeline, majority_baseline và metadata.
+- artifacts/part3_20261012_nv2_v2/extended/: tfidf_svm_extended.joblib và metadata.
+- outputs/part3_20261012_nv2_v2/: training/, training_extended/, feature_audits/,
+  all_selection_lock.json, evaluation/ và verification.json của lần train/test.
+- outputs/part3_completion_20261021/: validation/ với đầy đủ output của sáu mô hình,
+  results.csv, primary_model.json, bundle_manifest.json, completion.json.
+- outputs/part3_delivery_20261021/tests.json: log 67 tests và hash code lúc kiểm tra.
+- handoff/NV3_20261021.zip: gói riêng cho nhóm.
+
+ZIP chứa code/cấu hình, artifact/metadata, kết quả tổng hợp, báo cáo, log validation
+và fixture dự đoán. Không chứa CSV bình luận thật, predictions/errors có text gốc,
+ID bài Facebook hoặc hồ sơ gán nhãn. Output chi tiết vẫn đủ trong workspace;
+người 4 nhận data/ hiện hành riêng từ người 1.
+
+## Chạy trên máy nhận bàn giao
+
+Giải nén ZIP vào thư mục mới, mở PowerShell tại gốc thư mục đó:
+
+~~~powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-part3.txt
+.\.venv\Scripts\python.exe -m pip install -e . --no-deps
+$python = ".\.venv\Scripts\python.exe"
+& $python scripts/verify_part3_bundle.py --root .
+& $python -m ptit_sentiment.predict --model artifacts/part3_20261012_nv2_v2/bow_nb.joblib --text "Mình chưa hài lòng với lịch học."
+& $python -m ptit_sentiment.predict --model artifacts/part3_20261012_nv2_v2/tfidf_svm.joblib --input tests/fixtures/new_comments.csv --output outputs/predict_new.csv
+~~~
+
+Verifier kiểm tra hash từng tệp và tải sáu artifact dự đoán fixture,
+không cần dữ liệu thật/không train. Môi trường thực nghiệm Python 3.12;
+requirements-part3.txt của ZIP và metadata chốt phiên bản thư viện.
+
+Để tái lập train/evaluate, nhận data/ hiện hành rồi chọn run-name mới:
+
+~~~powershell
+& $python -m ptit_sentiment.data.validate --input data/labeled/labeled_comments.csv
+& $python scripts/run_part3.py --run-name part3_reproduce_new --config configs/part3_v2.yaml --extended-config configs/part3_v2_extended.yaml
+~~~
+
+Mặc định train/runner dùng configs/part3_v2.yaml. Không refit train+validation.
+SVM chưa hội tụ được thử lại một lần; vẫn lỗi thì dừng. Lệnh bảo toàn output đã có.
+
+## API cho người 4
+
+~~~python
 import pandas as pd
 from ptit_sentiment.predict import load_artifact, predict_with_artifact
 
-model, metadata = load_artifact("artifacts/part3_20261009_cpu/bow_nb.joblib")
-frame = pd.DataFrame([{"id": "new-01", "text": "Mình chưa hài lòng với lịch học"}])
-result = predict_with_artifact(model, metadata, frame)
-print(result)
-# Bốn pipeline cũng hỗ trợ model.predict([text_goc, ...]).
-```
+model, metadata = load_artifact("artifacts/part3_20261012_nv2_v2/bow_nb.joblib")
+frame = pd.DataFrame([{"id": "new-01", "text": "Thầy giảng rất dễ hiểu."}])
+print(predict_with_artifact(model, metadata, frame))
+~~~
 
-Input CSV UTF-8 cần `id,text`, ID đọc như chuỗi, text không rỗng, label không bắt buộc.
-CLI kiểm tra thiếu cột, trùng ID/text và nhãn tùy chọn. Pipeline từ chối câu thiếu/rỗng hoặc rỗng sau xử lý.
-Đầu ra có `id,text,true_label,predicted_label,model_name`; true_label rỗng nếu không có label.
-NB/baseline có thêm xác suất theo tên lớp; SVM chỉ nhãn. Không train lại khi predict.
-Baseline dùng `predict_classical(..., baseline=True)` hoặc giao diện chung trên vì input DummyClassifier khác pipeline.
+Truyền **text gốc**, không preprocess trước. CSV cần id,text; label không bắt buộc;
+post_id được giữ nếu có. Pipeline gồm tiền xử lý + vectorizer + classifier.
+labels.py ánh xạ positive=0, neutral=1, negative=2; không suy diễn thứ tự classes_.
+SVM chỉ nhãn, decision score không phải xác suất/độ mạnh cảm xúc.
+Baseline dùng API chung vì cách nhận input khác pipeline.
 
-Pipeline đã thực hiện NFC/khoảng trắng/ký tự lỗi, che email/điện thoại/@handle, lowercase,
-URL→urltoken, slang, giữ emoji/dấu câu/phủ định, Underthesea, không loại stop words,
-vectorizer từ train rồi classifier. **Truyền text gốc**, không gọi preprocess trước.
-Chỉ joblib tin cậy của nhóm mới được tải; dùng môi trường tương thích đã lưu trong metadata.
-
-```powershell
-$python = ".\.venv\Scripts\python.exe"
-& $python -m ptit_sentiment.predict --model artifacts/part3_20261009_cpu/bow_nb.joblib --text "Thầy giảng rất dễ hiểu."
-& $python -m ptit_sentiment.predict --model artifacts/part3_20261009_cpu/tfidf_svm.joblib --input tests/fixtures/new_comments.csv --output outputs/new_predictions_part3.csv
-```
-
-CSV fixture chỉ kiểm tra đường dự đoán, không phải kết quả thực nghiệm.
-Chọn đường dẫn output chưa tồn tại; tất cả lệnh bảo toàn lần chạy cũ.
-
-## Hàm đánh giá chung cho PhoBERT
-
-PhoBERT dùng đường chuẩn bị đầu vào riêng; không dùng vectorizer hoặc xử lý truyền thống ở trên.
-Người 4 phải train và chọn checkpoint trên **cùng manifest** trước khi đo test.
-
-```python
-from ptit_sentiment.evaluation.metrics import prediction_frame, export_evaluation
-from ptit_sentiment.common import file_hash
-
-# frame là test đọc bằng read_csv; predicted là list nhãn theo đúng thứ tự frame.
-predictions = prediction_frame(frame, predicted, "phobert")
-metrics = export_evaluation("outputs/phobert_new/evaluation", predictions, {
-    "model_name": "phobert", "split": "test", "provenance": "real",
-    "split_manifest_sha256": file_hash("data/splits/manifest.json"),
-    "evaluation_data_sha256": file_hash("data/splits/test.csv"),
-    "labeling_policy": "ai_initial", "human_labels_confirmed": False,
-})
-```
-
-`compute_metrics(y_true, y_pred)` tính Accuracy, per-label Precision/Recall/F1/support,
-Macro-Precision/Recall/F1; undefined→0, matrix 3×3 theo labels.py, hàng thật/cột dự đoán.
-`export_evaluation` xuất metrics.json/.csv, per_label.csv, classification_report.csv,
-confusion_matrix.csv/.png, predictions.csv, errors.csv; thư mục đích phải mới.
-Với artifact PhoBERT đã đúng schema, ưu tiên CLI `ptit_sentiment.evaluation.evaluate`
-để tự kiểm tra hash manifest và thêm metadata/thống kê truncation.
+PhoBERT dùng đầu vào riêng, cùng manifest/nhãn. Người 4 tái sử dụng prediction_frame,
+compute_metrics, export_evaluation trong [metrics.py](../src/ptit_sentiment/evaluation/metrics.py),
+hoặc CLI evaluate. Confusion matrix theo positive/neutral/negative, hàng thật/cột dự đoán.
 Compare từ chối khác manifest/test/provenance/số mẫu hoặc trùng tên model.
 
-## Tái lập và bằng chứng
+## Giới hạn cần ghi khi báo cáo
 
-```powershell
-.\.venv\Scripts\python.exe scripts/run_part3.py --run-name part3_rerun_01
-```
+Nhãn đều AI, chưa có nhãn người độc lập; test đã dùng ngày 09/10.
+Điểm mới là so sánh bổ sung trên cùng test, chưa xác nhận chất lượng độc lập.
+Không tune/đổi nhãn tiếp từ lỗi test này. Emoji keep_and_map không đổi đầu vào ở bộ
+hiện tại vì không có emoji thuộc bảng ánh xạ; chưa đo được hiệu quả mapping.
+PhoBERT thuộc người 4; chưa được fine-tune trong phần người 3.
 
-Lệnh chạy audit dữ liệu/NV2, 57 tests, 24 ứng viên, lưu tất cả lựa chọn trước test,
-đánh giá năm artifact, compare, kiểm tra predict câu/CSV và lỗi đầu vào/artifact,
-đối chiếu serialize trên toàn test. Không refit train+validation.
-Quy tắc hòa: ứng viên xuất hiện trước trong YAML thắng khi Macro-F1 bằng nhau.
-SVM được bắt ConvergenceWarning, tăng max_iter tối đa 100000 rồi thử lại một lần;
-vẫn chưa hội tụ thì dừng, không lưu như kết quả đạt. Lần chính không phát sinh cảnh báo hội tụ.
-`commands.json` lưu lệnh/exit code/stdout/stderr/thời gian; `run_context.json` lưu HEAD,
-trạng thái Git và hash code; `verification.json` lưu kiểm chứng toàn luồng.
-
-Giới hạn: 2.600 nhãn đều AI; test chỉ đo phù hợp với AI. Neutral chiếm đa số,
-có câu ngắn/đa nghĩa và vector 0. Không kết luận toàn dự án hoàn tất khi PhoBERT và
-đánh giá nhãn người độc lập còn ngoài lần này. Xem [báo cáo](../report/part3_classical.md),
-[phân tích lỗi](../report/part3_error_analysis.md), [tài liệu học](part3_learning.md).
+Học/bảo vệ: [tài liệu phần 3](part3_learning.md), [25 câu sai](../report/part3_error_analysis.md).

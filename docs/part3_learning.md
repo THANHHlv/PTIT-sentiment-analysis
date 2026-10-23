@@ -4,7 +4,8 @@
 
 Pipeline nhận **text gốc** → chuẩn hóa NFC/khoảng trắng, che thông tin nhạy cảm,
 thay URL, mở rộng slang → Underthesea tách từ → BoW/TF-IDF → classifier → nhãn.
-Ví dụ minh họa `SV ko thích lịch học` thành `sinh_viên không thích lịch_học`.
+Theo cấu hình mới, ví dụ minh họa `SV ko thích lịch học` thành `sv không thích lịch_học`.
+Chỉ mở rộng ko/khum/hok; cấu hình cũ từng mở rộng sv/k/dc nên có vocabulary khác.
 Một cột vector ứng với một token hoặc cặp token liên tiếp có trong vocabulary train.
 CSV gốc không bị sửa. Pipeline đã lưu chứa cả ba bước; không tiền xử lý lần nữa trước `predict`.
 
@@ -24,7 +25,7 @@ Code: [tiền xử lý](../src/ptit_sentiment/preprocessing/tokenize.py),
 
 Validation chọn cấu hình bằng Macro-F1. Test đo kết quả sau khi đã chốt.
 Code [train_classical.py](../src/ptit_sentiment/training/train_classical.py) tách từ train/validation
-một lần bằng bộ xử lý không học tham số. Mỗi ứng viên vẫn có vectorizer và classifier riêng;
+một lần cho mỗi chế độ emoji bằng bộ xử lý không học tham số. Mỗi ứng viên có vectorizer/classifier riêng;
 pipeline hoàn chỉnh được ghép lại để nhận text gốc. Test không tham gia fit/chọn tham số.
 
 ## BoW, TF-IDF, unigram và bigram
@@ -112,5 +113,32 @@ Luôn đọc hàng là thật, cột là dự đoán theo thứ tự `positive, 
 | Có thể đổi C sau khi đọc lỗi test? | Đó là thử nghiệm mới có sử dụng test; không tiếp tục gọi điểm cũ là đánh giá độc lập. |
 | Phần 3 đã bao gồm PhoBERT chưa? | Chưa; người 4 cần dùng cùng manifest và hàm đánh giá chung. |
 
-Xem kết quả thật, cấu hình được chọn và phân tích lỗi ở
-[báo cáo phần 3](../report/part3_classical.md), cách dùng ở [bàn giao](part3_handoff.md).
+## Phần bổ sung sau cập nhật NV2
+
+`FeatureUnion` nối ma trận TF-IDF word với TF-IDF char_wb (3,5).
+Char n-gram là đoạn ký tự trong biên từ; có thể chia sẻ đặc trưng giữa các biến thể
+viết/tiếng lóng, nhưng không tự hiểu mỉa mai hay ngữ cảnh hội thoại.
+Cả hai nhánh lấy cùng text đã chuẩn hóa/tách từ và chỉ fit train; mỗi nhánh L2 riêng.
+Model mới được chọn có 3569 cột từ + 20000 cột ký tự, validation không có vector 0.
+Không thay thế bốn tổ hợp bắt buộc bằng nhánh bổ sung này.
+
+`class_weight=balanced` ở SVM đặt trọng số lớp theo `n_train / (3 × n_train_lớp)`.
+Lớp ít mẫu chịu trọng số lỗi cao hơn; đây không phải nhân bản dữ liệu, đổi nhãn
+hay bảo đảm mọi lớp sẽ có recall cao. Word-char + balanced được chọn từ validation;
+word + balanced riêng không tăng Macro-F1 ở nhóm cấu hình tốt nhất lần này.
+
+`keep_and_map` giữ emoji và thêm từ ánh xạ cho emoji có trong bảng của NV2.
+Cache tách theo emoji tránh dùng lại sai text khi tìm tham số. Tests có ví dụ hỗ trợ
+để xác minh đường này; dữ liệu thật hiện không chứa emoji trong bảng ánh xạ,
+nên đầu vào keep/keep_and_map giống nhau và chưa thể đo ích lợi thực nghiệm của mapping.
+
+BoW+NB đứng đầu validation mới (0.616621), BoW+SVM đứng đầu test trong bốn tổ hợp
+bắt buộc (0.547529); word-char+SVM bổ sung đạt Macro-F1 test 0.563401.
+Không đổi lựa chọn chính theo thứ hạng test. Đây là so sánh trên test đã dùng trước đó,
+chưa phải kiểm chứng độc lập của phiên bản mới. Cần test mới có nhãn người để xác nhận.
+
+Code: [pipeline](../src/ptit_sentiment/models/classical.py),
+[audit hai nhánh](../scripts/audit_selected_features.py),
+[runner và khóa chung](../scripts/run_part3.py).
+Xem [báo cáo hiện hành](../report/report.md),
+[phân tích lỗi](../report/part3_error_analysis.md), [bàn giao](part3_handoff.md).

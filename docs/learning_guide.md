@@ -3,13 +3,19 @@
 Lệnh cài/chạy ở [README](../README.md); dữ liệu hiện tại ở [hợp đồng dữ liệu](data_contract.md).
 Ví dụ tính tay trong tài liệu chỉ dùng để học.
 
+Phần người 3 sau cập nhật NV2 đã chạy thực nghiệm thật: xem
+[hướng dẫn NB/SVM và word-char](part3_learning.md),
+[báo cáo mới](../report/report.md) và [bàn giao](part3_handoff.md).
+Điểm số dùng nhãn AI trên test đã dùng trước đó, chưa thay thế đánh giá độc lập bằng nhãn người.
+
 ## 1. Từ bình luận đến nhãn
 
 Ví dụ tự viết: “SV ko thích lịch học mới 😢”.
 Luồng: kiểm tra CSV → chia bài viết → normalize → tách từ →
 vectorizer → classifier → nhãn. Text gốc vẫn được lưu để người phân tích đọc lại.
-Normalize mặc định chuyển thành “sinh viên không thích lịch học mới 😢”.
-Underthesea có thể ghép sinh_viên, lịch_học. Kết quả tách từ phụ thuộc phiên bản.
+Normalize mặc định mới chuyển thành “sv không thích lịch học mới 😢”.
+Slang map chỉ mở rộng ko/khum/hok, giữ sv/k/dc vì có thể đa nghĩa.
+Underthesea có thể ghép lịch_học. Kết quả tách từ phụ thuộc phiên bản.
 
 Classical tạo vector thưa rồi dùng NB/SVM. PhoBERT dùng RDRSegmenter, tiếp đến
 tokenizer subword riêng và mạng Transformer. Cả hai trả cùng một trong ba nhãn.
@@ -129,7 +135,7 @@ train_phobert.py dùng AutoModelForSequenceClassification, padding động, tố
 Cắt phía phải: phần cuối bình luận có thể mất, kể cả vế “nhưng ...”.
 preprocessing/phobert_input.py đếm token trước cắt; truncation.json ghi số lượng/tỷ lệ/id bị cắt
 trên train và validation. Evaluate lưu thống kê test trong metrics.json.
-Chọn checkpoint bằng Macro-F1 validation; config smoke 1 bước chỉ thử cơ chế chạy.
+Chọn checkpoint bằng Macro-F1 validation; chạy một bước chỉ kiểm tra cơ chế, chưa thay thực nghiệm đầy đủ.
 Chưa chạy model thật thì không được mô tả như đã fine-tune thành công.
 
 ## 10. Tính độ đo cho ba nhãn

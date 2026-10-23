@@ -116,7 +116,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--splits-dir", default="data/splits")
     parser.add_argument("--source", default="data/labeled/labeled_comments.csv")
-    parser.add_argument("--config", default="configs/part3.yaml")
+    parser.add_argument("--config", default="configs/part3_v2.yaml")
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
     review(args.splits_dir, args.source, args.config, args.output)
