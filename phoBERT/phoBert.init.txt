@@ -1,1 +1,26 @@
 start PhoBert
+1. Hiểu pipeline xử lý dữ liệu của PhoBERT
+Trước khi viết code, bạn cần hiểu dữ liệu sẽ đi qua những bước nào:
+CSV gốc
+
+text + label
+
+
+Làm sạch văn bản
+
+Xử lý khoảng trắng, giá trị rỗng, ký tự không cần thiết
+
+
+Word Segmentation
+
+Tách từ tiếng Việt bằng VnCoreNLP
+
+
+PhoBERT Tokenizer
+
+Chuyển văn bản thành Input IDs và Attention Mask
+
+
+PhoBERT Model
+
+Nhận đầu vào để thực hiện phân loại cảm xúc

@@ -10,6 +10,7 @@ __pycache__/
 !/data/raw/
 !/data/labeled/
 !/data/splits/
+!/data/processed/
 data/raw/*
 data/labeled/*
 data/splits/*

@@ -1,0 +1,10 @@
+python -m ensurepip --upgrade
+python -m pip --version
+python -m pip install --upgrade pip
+python -m pip install torch --index-url https://download.pytorch.org/whl/cu126
+python -m pip install transformers datasets accelerate tokenizers
+python -m pip install pandas numpy scikit-learn matplotlib seaborn tqdm
+python -m pip install py_vncorenlp
+python -m pip install transformers
+python -m pip install -e .
+python -m pip install -e ".[phobert]"
