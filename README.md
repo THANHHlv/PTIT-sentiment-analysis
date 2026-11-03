@@ -1,124 +1,132 @@
-# PTIT Sentiment Analysis
+# PTIT Sentiment Analysis — Người 3
 
-Đề tài: **Xây dựng hệ thống phân loại cảm xúc bình luận của sinh viên PTIT trên các nhóm Facebook**.
+Phần người 3: **BoW + NB, TF-IDF + NB, BoW + LinearSVC, TF-IDF + LinearSVC**.
+Đã train/evaluate thật bằng CPU trong lần part3_final_20261102.
+Mô hình chính là TF-IDF + SVM, chọn bằng Macro-F1 validation=0,577487.
+Accuracy test=0,717949; Macro-F1 test=0,535355.
+[Báo cáo người 3](report/report.md) chứa đầy đủ số liệu, ma trận và phân tích.
 
-Phần người 3 đã có bốn pipeline BoW/TF-IDF × NB/SVM, majority baseline và một
-TF-IDF word-char + SVM bổ sung, được huấn luyện bằng CPU.
-Mô hình chính là **BoW + NB**, chọn bằng Macro-F1 validation = 0,616621;
-Macro-F1 test = 0,544067. [Báo cáo](report/report.md) chứa bảng kết quả đầy đủ.
-
-Dữ liệu hiện hành: 2.600 bình luận thật mang **nhãn AI**, train/validation/test =
-1.801/409/390, dataset ai_initial_4e93595ef7d1_seed42. Test đã dùng trước đó;
-kết quả chưa thay đánh giá bằng nhãn người độc lập.
-PhoBERT có code fine-tune, **chưa huấn luyện trên bộ chia này**.
+Dùng nguyên dữ liệu/tiền xử lý của người 1/2. Train/validation/test=1801/409/390,
+dataset ai_initial_4e93595ef7d1_seed42. **Nhãn tham chiếu vẫn là AI**;
+test từng được dùng, chưa phải đánh giá độc lập bằng nhãn người.
+Excel review nằm riêng trong outputs/label_review/, chưa ghép vào thực nghiệm.
+PhoBERT do người 4 thực hiện; chưa có điểm PhoBERT trong kết quả này.
 
 ## Cài đặt
 
-Mở PowerShell tại thư mục gốc; khuyến nghị Python 3.12 để khớp môi trường artifact.
+Mở PowerShell tại gốc dự án; khuyến nghị Python 3.12 để khớp artifact.
 
 ~~~powershell
 python -m venv .venv
-$python = ".\.venv\Scripts\python.exe"
-& $python -m pip install -e .
+.\.venv\Scripts\python.exe -m pip install -e .
 ~~~
 
-Nếu đã có .venv, chỉ cần gán $python. Phiên bản thực nghiệm lưu trong
-metadata từng artifact. Gói handoff/NV3_20261021.zip có requirements được chốt phiên bản.
+Nếu đã có .venv thì dùng trực tiếp các lệnh bên dưới, không cần biến $python.
+Phiên bản thư viện đã train được lưu trong metadata và requirements của gói bàn giao.
 
-## Chạy mô hình đã có
-
-Truyền bình luận gốc; pipeline tự tiền xử lý, không huấn luyện lại lúc dự đoán.
+## Demo phần 3
 
 ~~~powershell
-& $python -m ptit_sentiment.predict --model artifacts/part3_20261012_nv2_v2/bow_nb.joblib --text "Mình chưa hài lòng với lịch học."
-& $python -m ptit_sentiment.predict --model artifacts/part3_20261012_nv2_v2/bow_nb.joblib --input tests/fixtures/new_comments.csv --output outputs/predict_new.csv
+.\.venv\Scripts\python.exe -m ptit_sentiment.predict --model artifacts/part3_final_20261102/tfidf_svm.joblib --text "Thầy giảng rất dễ hiểu."
+.\.venv\Scripts\python.exe -m ptit_sentiment.predict --model artifacts/part3_final_20261102/tfidf_svm.joblib --input tests/fixtures/new_comments.csv --output outputs/demo_part3.csv
 ~~~
 
-CSV dự đoán cần id,text; không cần label. Nhãn: positive, neutral, negative.
-SVM decision score không phải xác suất hoặc độ mạnh cảm xúc.
+Đổi tfidf_svm.joblib thành bow_nb.joblib, tfidf_nb.joblib hoặc bow_svm.joblib để thử
+từng tổ hợp. Nhãn trả về positive/neutral/negative. Pipeline nhận text gốc, không train
+lại lúc predict. CSV mới cần id,text, không cần label. Đổi tên output nếu file đã tồn tại.
 
-## Kiểm tra dữ liệu và code
+## Kiểm tra đầu vào và code
 
 ~~~powershell
-& $python -m ptit_sentiment.data.validate --input data/labeled/labeled_comments.csv
-& $python scripts/verify_ai_dataset.py --output outputs/dataset_verification_new.json
-& $python -B -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe scripts/verify_ai_dataset.py --output outputs/data_check_new.json
+.\.venv\Scripts\python.exe -m ptit_sentiment.data.validate --input data/labeled/labeled_comments.csv
+.\.venv\Scripts\python.exe -B -m unittest discover -s tests -v
 ~~~
 
-Không chia lại bộ hiện hành. Với dữ liệu mới đã được người gán xác nhận,
-làm theo [quy trình dữ liệu](docs/data_contract.md) và [hướng dẫn nhãn](docs/labeling_guide.md).
-Lệnh chia dưới đây chỉ minh họa bằng fixture tổng hợp, xuất riêng:
+Có 68 kiểm thử, gồm kiểm tra output dùng chung với nhãn dự đoán PhoBERT.
+Fixture tổng hợp chỉ thử code, không thay thực nghiệm thật.
+
+## Tái lập toàn bộ phần 3
+
+Chọn run-name mới để không ghi đè kết quả đã có. Runner audit dữ liệu/NV2,
+train 16 ứng viên, chọn bằng validation, khóa artifact rồi mới evaluate test:
 
 ~~~powershell
-& $python -m ptit_sentiment.data.split --input tests/fixtures/synthetic.csv --output-dir outputs/splits_example --config configs/classical.yaml --provenance synthetic
+.\.venv\Scripts\python.exe -B scripts/run_part3.py --run-name part3_reproduce_new --config configs/part3.yaml
 ~~~
 
-## Tái lập huấn luyện và đánh giá
+Cấu hình: n-gram (1,1)/(1,2), alpha=0.5/1, C=0.5/1, class_weight=None, seed42.
+Mỗi tổ hợp bốn ứng viên; không refit train+validation, không tune theo test.
+Baseline majority học lớp neutral chỉ từ train để đối chiếu.
 
-Chọn tên lần chạy mới để bảo toàn kết quả hiện có. Runner kiểm tra dữ liệu/NV2,
-train trên train, chọn bằng validation, khóa artifact rồi đánh giá test:
+## Train, evaluate, compare riêng
+
+Lệnh train chạy đủ bốn pipeline và baseline, nhận cùng bộ chia:
 
 ~~~powershell
-& $python scripts/run_part3.py --run-name part3_reproduce_new --config configs/part3_v2.yaml --extended-config configs/part3_v2_extended.yaml
+.\.venv\Scripts\python.exe -m ptit_sentiment.training.train_classical --splits-dir data/splits --config configs/part3.yaml --artifact-dir artifacts/manual_new --output-dir outputs/manual_new/training
 ~~~
 
-Có thể chạy từng bước cho bốn pipeline bắt buộc và baseline:
+Sau khi đã chốt lựa chọn bằng validation, đánh giá bốn pipeline:
 
 ~~~powershell
-& $python -m ptit_sentiment.training.train_classical --splits-dir data/splits --config configs/part3_v2.yaml --artifact-dir artifacts/manual_new --output-dir outputs/manual_new/training
-& $python -m ptit_sentiment.evaluation.evaluate --model artifacts/manual_new/bow_nb.joblib --splits-dir data/splits --output-dir outputs/manual_new/evaluation/bow_nb --split test
-& $python -m ptit_sentiment.evaluation.evaluate --model artifacts/manual_new/tfidf_svm.joblib --splits-dir data/splits --output-dir outputs/manual_new/evaluation/tfidf_svm --split test
-& $python -m ptit_sentiment.evaluation.compare --inputs outputs/manual_new/evaluation/bow_nb/metrics.json outputs/manual_new/evaluation/tfidf_svm/metrics.json --output outputs/manual_new/comparison.csv
+foreach ($name in @("bow_nb", "tfidf_nb", "bow_svm", "tfidf_svm")) {
+    .\.venv\Scripts\python.exe -m ptit_sentiment.evaluation.evaluate --model "artifacts/manual_new/$name.joblib" --splits-dir data/splits --split test --output-dir "outputs/manual_new/evaluation/$name"
+}
+.\.venv\Scripts\python.exe -m ptit_sentiment.evaluation.compare --inputs outputs/manual_new/evaluation/bow_nb/metrics.json outputs/manual_new/evaluation/tfidf_nb/metrics.json outputs/manual_new/evaluation/bow_svm/metrics.json outputs/manual_new/evaluation/tfidf_svm/metrics.json --output outputs/manual_new/comparison.csv
 ~~~
 
-Chỉ đánh giá test sau khi đã chốt lựa chọn. Không tune theo test.
-Để xuất bản bằng chứng mới từ lần chạy hiện hành, chọn thư mục chưa tồn tại:
+Mỗi mô hình xuất metrics.json, classification_report.csv, confusion_matrix.csv/.png,
+predictions.csv và errors.csv; có thêm bảng per-label/nhóm lỗi để đối chiếu.
+Confusion matrix: hàng nhãn thật, cột dự đoán, thứ tự positive/neutral/negative.
+SVM decision score không phải xác suất.
 
-~~~powershell
-& $python scripts/export_report_evidence.py --run-dir outputs/part3_20261012_nv2_v2 --splits-dir data/splits --output-dir outputs/report_evidence_new
-~~~
+## Kết quả và bàn giao
 
-## PhoBERT — phần người 4
-
-Cài thêm nhóm phụ thuộc, Java và VnCoreNLP; checkpoint cần tải một lần.
-Lệnh dưới đây là hướng dẫn thực nghiệm tiếp theo, chưa phải kết quả đã hoàn thành.
-
-~~~powershell
-& $python -m pip install -e ".[phobert]"
-& $python scripts/setup_vncorenlp.py --output-dir tools/vncorenlp
-& $python scripts/download_phobert.py --config configs/phobert.yaml
-& $python -m ptit_sentiment.training.train_phobert --splits-dir data/splits --config configs/phobert_gpu4gb.yaml --artifact-dir artifacts/phobert_current_new
-& $python -m ptit_sentiment.evaluation.evaluate --model artifacts/phobert_current_new --splits-dir data/splits --output-dir outputs/phobert_current_new/evaluation --split test
-~~~
-
-Dùng cùng manifest/ánh xạ nhãn, chọn checkpoint bằng Macro-F1 validation.
-Đầu vào PhoBERT dùng RDRSegmenter riêng; xem [phương pháp](docs/methodology.md).
-Không dùng pretrained checkpoint hoặc điểm smoke làm kết quả fine-tune.
-
-## Những thư mục cần dùng
-
-| Đường dẫn | Nội dung |
+| Đường dẫn | Công dụng |
 |---|---|
-| src/ptit_sentiment/, features.py | Code dữ liệu, tiền xử lý, đặc trưng, train, evaluate và predict |
-| configs/ | Cấu hình dùng được; thực nghiệm người 3 dùng part3_v2 và part3_v2_extended |
-| data/ | Một CSV labeled, ba CSV bộ chia và manifest |
-| tests/ | Kiểm thử và fixture tổng hợp, tách khỏi thực nghiệm |
-| artifacts/part3_20261012_nv2_v2/ | Pipeline hiện hành và metadata |
-| outputs/part3_20261012_nv2_v2/ | Log train, khóa lựa chọn, audit và kết quả test |
-| outputs/part3_completion_20261021/ | Kết quả validation, bảng tổng hợp và lựa chọn chính |
-| outputs/test_human_review_20261021/ | Excel có nhãn nháp bạn đã nhập, được giữ nguyên |
-| outputs/test_ai_labeled_20261021/ | Excel 390 nhãn AI và bản nháp người dùng để đối chiếu |
-| report/report.md, report/evidence/ | Báo cáo chính và bằng chứng đúng bộ chia hiện hành |
-| handoff/ | Gói bàn giao mô hình và dữ liệu tối giản |
-| outputs/archives/ | Nguồn/đối soát dữ liệu và bản sao lưu file đã dọn |
+| configs/part3.yaml | Cấu hình hiện hành đúng yêu cầu người 3 |
+| src/ptit_sentiment/ | Module dữ liệu, tiền xử lý, mô hình, train/evaluate/predict |
+| features.py | API đặc trưng bàn giao người 2 |
+| data/ | Labeled CSV, ba tập chia và manifest nguyên bản |
+| artifacts/part3_final_20261102/ | Bốn pipeline và baseline, mỗi model có metadata |
+| outputs/part3_final_20261102/comparison_core.csv | Bảng so sánh đúng bốn mô hình bắt buộc |
+| outputs/part3_final_20261102/evaluation/ | Kết quả test và lỗi từng mô hình |
+| outputs/part3_final_20261102/delivery/ | Validation, results.csv, primary_model.json, biên bản gói |
+| outputs/part3_final_20261102/error_examples.csv | 25 lỗi có ID thật, dùng nội bộ để đối soát |
+| outputs/label_review/ | Hai Excel gán nhãn/review, được giữ riêng |
+| outputs/archives/ | Nguồn dữ liệu và bản lịch sử trước khi hoàn thiện |
+| report/ | Báo cáo, phân tích lỗi ẩn danh và bằng chứng hiện hành |
+| handoff/NV3_20261102.zip | Gói code/artifact/kết quả tổng hợp cho người 4 |
+| tests/ | Bảy file kiểm thử và fixture riêng |
 
-Tài liệu: [phân công](docs/task_assignment.md), [bàn giao NV2](docs/nv2_handoff.md),
-[bàn giao người 3/API người 4](docs/part3_handoff.md),
-[học toàn dự án](docs/learning_guide.md), [học NB/SVM](docs/part3_learning.md),
-[phân tích lỗi](report/part3_error_analysis.md).
+Gói dữ liệu nội bộ: handoff/ai_initial_4e93595ef7d1_seed42.zip.
+Gói NV3 không chứa CSV bình luận thật, ID gốc, dự đoán/lỗi nguyên văn hoặc Excel nhãn.
+Cách kiểm tra ZIP và ghép kết quả PhoBERT: [bàn giao](docs/part3_handoff.md).
+Lý thuyết để bảo vệ: [part3_learning.md](docs/part3_learning.md).
+[Phương pháp](docs/methodology.md), [phân công](docs/task_assignment.md),
+[hợp đồng dữ liệu](docs/data_contract.md), [hướng dẫn nhãn](docs/labeling_guide.md).
 
-Đợt dọn 23/10/2026 giữ một bản code/tài liệu/kết quả hiện hành.
-Script dò/debug, bản demo/smoke, checkpoint bộ chia cũ và tài liệu lặp được lưu vào
-outputs/archives/project_cleanup_20261023.zip, kèm manifest SHA-256 và hướng dẫn khôi phục.
-Nhật ký kiểm tra ở outputs/cleanup_20261023/.
-Môi trường .venv, cache tải mô hình và tài nguyên VnCoreNLP vẫn được giữ để chạy dự án.
+## Công dụng các script còn giữ
+
+| Script | Vai trò |
+|---|---|
+| run_part3.py | Audit, train, khóa lựa chọn, evaluate và kiểm chứng |
+| review_part2.py | Kiểm tra tích hợp dữ liệu/đặc trưng của người 2 |
+| audit_selected_features.py | Đối chiếu vocabulary/IDF chỉ từ train |
+| verify_ai_dataset.py | Kiểm tra nguồn nhãn, hash và chống rò rỉ |
+| export_report_evidence.py | Xuất bằng chứng báo cáo từ kết quả thật |
+| finalize_part3.py | Kiểm chứng kết quả và đóng gói bàn giao |
+| verify_part3_bundle.py | Kiểm tra hash và dự đoán sau giải nén |
+| package_team_data.py | Đóng gói cùng bộ dữ liệu cho nhóm |
+| download_phobert.py | Người 4 tải checkpoint |
+| setup_vncorenlp.py | Người 4 chuẩn bị đầu vào PhoBERT |
+
+PhoBERT có nhóm phụ thuộc riêng: pip install -e ".[phobert]"; Java/VnCoreNLP
+và configs/phobert*.yaml được giữ cho người 4. Phần người 3 không huấn luyện mô hình này.
+Không chia lại bộ hiện hành. Lệnh split cho dữ liệu mới theo [hợp đồng](docs/data_contract.md);
+ví dụ kiểm tra code, xuất riêng bằng fixture:
+
+~~~powershell
+.\.venv\Scripts\python.exe -m ptit_sentiment.data.split --input tests/fixtures/synthetic.csv --output-dir outputs/splits_example --config configs/classical.yaml --provenance synthetic
+~~~

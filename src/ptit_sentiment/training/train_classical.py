@@ -77,7 +77,8 @@ def train_models(splits_dir, config_path, artifact_dir, output_dir):
         "label_source_counts": manifest.get("label_source_counts"),
         "annotation_status_counts": manifest.get("annotation_status_counts"),
         "human_labels_confirmed": manifest.get("human_labels_confirmed", False),
-        "config_sha256": file_hash(config_path), "started_at_utc": started,
+        "config_sha256": file_hash(config_path), "config_path": Path(config_path).as_posix(),
+        "started_at_utc": started,
         "sample_counts": {name: len(frame) for name, frame in frames.items()},
         "tie_break": "first candidate in YAML order; strict greater validation Macro-F1",
         "device": "cpu",
@@ -195,7 +196,7 @@ def train_models(splits_dir, config_path, artifact_dir, output_dir):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--splits-dir", required=True)
-    parser.add_argument("--config", default="configs/part3_v2.yaml")
+    parser.add_argument("--config", default="configs/part3.yaml")
     parser.add_argument("--artifact-dir", required=True)
     parser.add_argument("--output-dir", required=True)
     args = parser.parse_args()

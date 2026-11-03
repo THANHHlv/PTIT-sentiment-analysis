@@ -1,126 +1,101 @@
-# Bàn giao phần người 3 — bản hiện hành
+# Bàn giao người 3 cho người 4
 
-Hoàn thiện và kiểm chứng lại ngày 21/10/2026. Phần người 3 gồm NB, SVM, baseline, đánh giá,
-phân tích lỗi và báo cáo truyền thống. Sử dụng mô hình đã khóa của
-part3_20261012_nv2_v2; không train/refit lại và không chọn bằng test.
+Lần part3_final_20261102 đã chạy bốn tổ hợp BoW/TF-IDF × MultinomialNB/LinearSVC.
+Cấu hình ở [part3.yaml](../configs/part3.yaml): n-gram (1,1)/(1,2),
+alpha=0.5/1.0, C=0.5/1.0, class_weight=None, seed 42.
+Baseline neutral chỉ dùng đối chiếu. Không huấn luyện PhoBERT trong phần người 3.
 
-## Đầu vào và trạng thái
+## Đầu vào và đầu ra
 
-2.600 bình luận thật: positive 362, neutral 1800, negative 438.
-Train/validation/test = **1801/409/390**, seed 42, chia theo nhóm bài/ràng buộc trùng.
-Dataset ai_initial_4e93595ef7d1_seed42.
+Dataset ai_initial_4e93595ef7d1_seed42, train/validation/test = 1801/409/390.
 Manifest SHA-256: c743878f73ef20ef786f46f46c62511b894a10891c2893de8d75cb753522e4e3.
-Không đổi nhãn hoặc chia lại.
+Test SHA-256: afcb8ce871c14ea258fc02a8ec56596a2c7e2e034b88d2437f2cdffdc0184312.
 
-| Đầu ra | Trạng thái |
-|---|---|
-| Bốn pipeline bắt buộc | BoW/TF-IDF word × MultinomialNB/LinearSVC đã train |
-| Majority baseline | Học neutral từ train, đánh giá cùng test |
-| Chọn tham số | 24 ứng viên bắt buộc; Macro-F1 validation, không refit |
-| Bổ sung | 48 ứng viên TF-IDF word/word-char + SVM, tên riêng |
-| Test và validation | Đủ Accuracy, per-label/macro P/R/F1, support, ma trận và dự đoán/lỗi |
-| Phân tích lỗi | 25 trích đoạn thật đã ẩn danh, đối chiếu từng dòng và hash |
-| Kiểm thử | 67/67 tests đạt, fixture tách khỏi thực nghiệm |
-| Gói bàn giao | handoff/NV3_20261021.zip, kèm hash và verifier sau giải nén |
+Giữ nhãn AI và toàn bộ bộ chia bàn giao. Hai Excel trong outputs/label_review/
+là hồ sơ review riêng, chưa thay test hiện hành. Test từng được dùng trước;
+kết quả hiện tại chưa thay nhãn người độc lập.
 
+- artifacts/part3_final_20261102/: bốn pipeline, baseline và metadata.
+- outputs/part3_final_20261102/comparison_core.csv: bảng bốn mô hình.
+- outputs/part3_final_20261102/evaluation/: metric, ma trận, dự đoán và lỗi trên test.
+- outputs/part3_final_20261102/delivery/: validation/, results.csv, primary_model.json
+  và biên bản đóng gói.
+- outputs/part3_final_20261102/checks/tests.json: kiểm thử và hash code.
+- handoff/NV3_20261102.zip: gói code, cấu hình, pipeline và kết quả tổng hợp.
+- handoff/ai_initial_4e93595ef7d1_seed42.zip: dữ liệu nhận riêng trong nhóm.
 
-## Quyết định dùng nhãn AI ngày 21/10/2026
+Gói NV3 không chứa bình luận thật, ID gốc, CSV predictions/errors hoặc Excel gán nhãn.
+Báo cáo gồm trích đoạn đã ẩn danh. Không đưa dữ liệu riêng của nhóm lên kho công khai.
 
-Theo yêu cầu của người dùng, tiếp tục dùng bộ nhãn AI ban đầu cho phần người 3.
-Bản điền đủ 390 nhãn: outputs/test_ai_labeled_20261021/test_390_ai_labeled.xlsx.
-390 nhãn được lấy đúng từ test.csv hiện hành, không gán lại bằng dự đoán NB/SVM.
-Tất cả giữ label_source=ai, annotation_status=ai_labeled.
-25 nhãn người dùng nhập vẫn là bản nháp pending_review, giữ riêng trong file gốc
-và sheet Nhan_ban_da_nhap; 5 bất đồng được lưu để đối chiếu, không tự nhận là nhãn người xác nhận.
-Không đổi nhãn/bộ chia/artifact; điểm số và lựa chọn validation giữ nguyên.
-
-## Kết quả và lựa chọn chính
-
-| Mô hình | Macro-F1 validation | Accuracy test | Macro-F1 test |
-|---|---:|---:|---:|
-| BoW + NB | **0.616621** | 0.694872 | 0.544067 |
-| TF-IDF word + NB | 0.504317 | 0.723077 | 0.466176 |
-| BoW + SVM | 0.558472 | 0.710256 | 0.547529 |
-| TF-IDF word + SVM | 0.577487 | 0.717949 | 0.535355 |
-| Majority baseline | 0.272640 | 0.694872 | 0.273323 |
-| TF-IDF word-char + SVM (bổ sung) | 0.605381 | 0.707692 | 0.563401 |
-
-**Mô hình chính: BoW + NB**, chọn từ validation, unigram và alpha=0.1.
-Không thay lựa chọn theo thứ hạng test. primary_model.json ghi tên/artifact SHA/metric chọn.
-Chi tiết: [báo cáo](../report/report.md).
-
-## Artifact và bằng chứng
-
-- artifacts/part3_20261012_nv2_v2/: bốn pipeline, majority_baseline và metadata.
-- artifacts/part3_20261012_nv2_v2/extended/: tfidf_svm_extended.joblib và metadata.
-- outputs/part3_20261012_nv2_v2/: training/, training_extended/, feature_audits/,
-  all_selection_lock.json, evaluation/ và verification.json của lần train/test.
-- outputs/part3_completion_20261021/: validation/ với đầy đủ output của sáu mô hình,
-  results.csv, primary_model.json, bundle_manifest.json, completion.json.
-- outputs/part3_delivery_20261021/tests.json: log 67 tests và hash code lúc kiểm tra.
-- handoff/NV3_20261021.zip: gói riêng cho nhóm.
-
-ZIP chứa code/cấu hình, artifact/metadata, kết quả tổng hợp, báo cáo, log validation
-và fixture dự đoán. Không chứa CSV bình luận thật, predictions/errors có text gốc,
-ID bài Facebook hoặc hồ sơ gán nhãn. Output chi tiết vẫn đủ trong workspace;
-người 4 nhận data/ hiện hành riêng từ người 1.
-
-## Chạy trên máy nhận bàn giao
-
-Giải nén ZIP vào thư mục mới, mở PowerShell tại gốc thư mục đó:
+## Chạy gói sau giải nén
 
 ~~~powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-part3.txt
 .\.venv\Scripts\python.exe -m pip install -e . --no-deps
-$python = ".\.venv\Scripts\python.exe"
-& $python scripts/verify_part3_bundle.py --root .
-& $python -m ptit_sentiment.predict --model artifacts/part3_20261012_nv2_v2/bow_nb.joblib --text "Mình chưa hài lòng với lịch học."
-& $python -m ptit_sentiment.predict --model artifacts/part3_20261012_nv2_v2/tfidf_svm.joblib --input tests/fixtures/new_comments.csv --output outputs/predict_new.csv
+.\.venv\Scripts\python.exe scripts/verify_part3_bundle.py --root .
+.\.venv\Scripts\python.exe -m ptit_sentiment.predict --model artifacts/part3_final_20261102/tfidf_svm.joblib --text "Thầy giảng rất dễ hiểu."
 ~~~
 
-Verifier kiểm tra hash từng tệp và tải sáu artifact dự đoán fixture,
-không cần dữ liệu thật/không train. Môi trường thực nghiệm Python 3.12;
-requirements-part3.txt của ZIP và metadata chốt phiên bản thư viện.
+Verifier đối chiếu từng SHA-256 rồi tải pipeline và dự đoán fixture; không train.
+Dùng Python 3.12 và phiên bản requirements trong ZIP để khớp môi trường thực nghiệm.
+Model chính được chọn bằng validation, ghi trong delivery/primary_model.json;
+không đổi lựa chọn theo thứ hạng test.
 
-Để tái lập train/evaluate, nhận data/ hiện hành rồi chọn run-name mới:
-
-~~~powershell
-& $python -m ptit_sentiment.data.validate --input data/labeled/labeled_comments.csv
-& $python scripts/run_part3.py --run-name part3_reproduce_new --config configs/part3_v2.yaml --extended-config configs/part3_v2_extended.yaml
-~~~
-
-Mặc định train/runner dùng configs/part3_v2.yaml. Không refit train+validation.
-SVM chưa hội tụ được thử lại một lần; vẫn lỗi thì dừng. Lệnh bảo toàn output đã có.
-
-## API cho người 4
+## API dự đoán
 
 ~~~python
 import pandas as pd
 from ptit_sentiment.predict import load_artifact, predict_with_artifact
 
-model, metadata = load_artifact("artifacts/part3_20261012_nv2_v2/bow_nb.joblib")
+model, metadata = load_artifact("artifacts/part3_final_20261102/tfidf_svm.joblib")
 frame = pd.DataFrame([{"id": "new-01", "text": "Thầy giảng rất dễ hiểu."}])
-print(predict_with_artifact(model, metadata, frame))
+result = predict_with_artifact(model, metadata, frame)
 ~~~
 
-Truyền **text gốc**, không preprocess trước. CSV cần id,text; label không bắt buộc;
-post_id được giữ nếu có. Pipeline gồm tiền xử lý + vectorizer + classifier.
-labels.py ánh xạ positive=0, neutral=1, negative=2; không suy diễn thứ tự classes_.
-SVM chỉ nhãn, decision score không phải xác suất/độ mạnh cảm xúc.
-Baseline dùng API chung vì cách nhận input khác pipeline.
+Truyền text gốc. Pipeline tự thực hiện ba bước; không preprocess lần nữa.
+CSV dự đoán mới cần id,text, không cần label. Ánh xạ nhãn:
+positive=0, neutral=1, negative=2. SVM decision score không phải xác suất.
 
-PhoBERT dùng đầu vào riêng, cùng manifest/nhãn. Người 4 tái sử dụng prediction_frame,
-compute_metrics, export_evaluation trong [metrics.py](../src/ptit_sentiment/evaluation/metrics.py),
-hoặc CLI evaluate. Confusion matrix theo positive/neutral/negative, hàng thật/cột dự đoán.
-Compare từ chối khác manifest/test/provenance/số mẫu hoặc trùng tên model.
+## Ghép PhoBERT thành bảng năm mô hình
 
-## Giới hạn cần ghi khi báo cáo
+Người 4 fine-tune, chọn checkpoint bằng Macro-F1 validation rồi đánh giá cùng test.
+Với artifact PhoBERT theo package, dùng CLI evaluate chung. Với nhãn dự đoán từ
+mã riêng, dùng các hàm thuần sau; lấy metadata từ manifest đã kiểm tra:
 
-Nhãn đều AI, chưa có nhãn người độc lập; test đã dùng ngày 09/10.
-Điểm mới là so sánh bổ sung trên cùng test, chưa xác nhận chất lượng độc lập.
-Không tune/đổi nhãn tiếp từ lỗi test này. Emoji keep_and_map không đổi đầu vào ở bộ
-hiện tại vì không có emoji thuộc bảng ánh xạ; chưa đo được hiệu quả mapping.
-PhoBERT thuộc người 4; chưa được fine-tune trong phần người 3.
+~~~python
+from pathlib import Path
+from ptit_sentiment.data.split import load_split_set
+from ptit_sentiment.evaluation.metrics import (
+    compute_metrics, prediction_frame, export_evaluation,
+)
 
-Học/bảo vệ: [tài liệu phần 3](part3_learning.md), [25 câu sai](../report/part3_error_analysis.md).
+frames, manifest, digest = load_split_set("data/splits")
+test = frames["test"]
+# predicted_ids và predicted_labels là đầu ra thật của người 4.
+if list(predicted_ids) != test["id"].tolist():
+    raise ValueError("Dự đoán PhoBERT phải khớp ID/thứ tự của test.")
+predictions = prediction_frame(test, predicted_labels, "phobert")
+metrics = compute_metrics(test["label"].tolist(), predicted_labels)
+export_evaluation("outputs/phobert_new/evaluation", predictions, {
+    "model_name": "phobert", "split": "test",
+    "provenance": manifest["provenance"],
+    "dataset_version": manifest["dataset_version"],
+    "labeling_policy": manifest["labeling_policy"],
+    "human_labels_confirmed": manifest["human_labels_confirmed"],
+    "split_manifest_sha256": digest,
+    "evaluation_data_sha256": manifest["splits"]["test"]["sha256"],
+})
+~~~
+
+predicted_ids/predicted_labels trong ví dụ là dữ liệu cần cung cấp, không phải kết quả đã có.
+Không truyền metric tự tính vào metadata. export_evaluation tự tính từ nhãn thật/dự đoán
+và xuất đủ sáu file bắt buộc. Confusion matrix theo positive/neutral/negative,
+hàng thật/cột dự đoán. Nếu có xác suất, truyền classes đúng thứ tự của mô hình.
+
+Dùng compare --inputs bốn metrics.json của lần hiện hành và metrics.json PhoBERT.
+Compare từ chối khác phiên bản test hoặc trùng tên model. Chưa có output PhoBERT
+thì giữ bảng bốn mô hình, không tạo hàng điểm giả.
+
+Học/bảo vệ: [part3_learning.md](part3_learning.md).
+Số liệu và phân tích: [report.md](../report/report.md), [lỗi](../report/part3_error_analysis.md).

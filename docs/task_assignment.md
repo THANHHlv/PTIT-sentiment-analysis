@@ -3,10 +3,10 @@
 Cả nhóm dùng cùng package, [hợp đồng dữ liệu](data_contract.md), labels.py và manifest.
 Mỗi người làm nhánh riêng trong cùng kho; không tự chia lại dữ liệu trên từng máy.
 
-**Bản hoàn thiện người 3 — 21/10/2026:** đã tích hợp NV2, train/evaluate
-bốn pipeline + baseline và word-char+SVM bổ sung; 67 tests đạt, đủ kết quả validation/test.
+**Bản hoàn thiện người 3 — 02/11/2026:** đã tích hợp NV2, train/evaluate
+bốn pipeline + baseline theo lưới alpha/C=0.5/1; 68 tests đạt, đủ kết quả validation/test.
 [Bàn giao hiện hành](part3_handoff.md) và [báo cáo](../report/report.md);
-gói `handoff/NV3_20261021.zip` có verifier sau giải nén.
+gói `handoff/NV3_20261102.zip` có verifier sau giải nén.
 Kết quả nhãn AI trên test đã dùng; người 4 tiếp tục PhoBERT cùng manifest,
 nhóm chuẩn bị nhãn người/test mới để xác nhận độc lập.
 

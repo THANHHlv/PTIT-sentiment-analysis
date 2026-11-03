@@ -83,14 +83,16 @@ def finalize(run_name, output_dir, archive_path, test_log):
         expected_predictions[name] = predict_with_artifact(model, info, fixture)["predicted_label"].tolist()
     examples = pd.read_csv(run / "anonymized_error_examples.csv", dtype=str, keep_default_na=False)
     links = read_json(run / "error_example_links_local.json")
-    raw_errors = pd.read_csv(run / "evaluation/bow_nb/errors.csv", dtype=str, keep_default_na=False).set_index("id")
+    selected_name = read_json(run / "training/selection_lock.json")["recommended_model"]["model_name"]
+    raw_errors = pd.read_csv(run / f"evaluation/{selected_name}/errors.csv", dtype=str, keep_default_na=False).set_index("id")
+    prediction_column = "predicted_label" if "predicted_label" in examples else "predicted_label_bow_nb"
     require(len(examples) == len(links) == 25 and set(examples.example_id) == {item["example_id"] for item in links},
             "Ví dụ lỗi không đủ/không khớp đối soát.")
     for item in links:
         raw = raw_errors.loc[item["id"]]
         sample = examples.set_index("example_id").loc[item["example_id"]]
         require(sample["excerpt"] in raw["text"] and sample["true_label_ai"] == raw["true_label"]
-                and sample["predicted_label_bow_nb"] == raw["predicted_label"], "Trích đoạn lỗi không khớp dữ liệu thật.")
+                and sample[prediction_column] == raw["predicted_label"], "Trích đoạn lỗi không khớp dữ liệu thật.")
         require(hashlib.sha256(raw["text"].encode("utf-8")).hexdigest() == item["text_sha256"], "Hash ví dụ lỗi sai.")
     output.mkdir(parents=True)
     validation_results = {}
@@ -114,15 +116,15 @@ def finalize(run_name, output_dir, archive_path, test_log):
                     "note": "Summarizes the existing validation choice; does not retrain or change locked artifacts"}
     write_json(output / "primary_model.json", primary_info)
     members = [Path("pyproject.toml"), Path("features.py"), Path(".gitattributes"), *Path("src").rglob("*.py"),
-               Path("configs/part3_v2.yaml"), Path("configs/part3_v2_extended.yaml"),
+               Path(metadata[primary].get("config_path", "configs/part3.yaml")),
                Path("tests/fixtures/new_comments.csv"), Path("docs/part3_handoff.md"), Path("docs/part3_learning.md"),
                Path("report/report.md"), Path("report/part3_error_analysis.md"),
                Path("scripts/verify_part3_bundle.py"), Path("scripts/run_part3.py"),
-               Path("scripts/review_part2.py"), Path("scripts/audit_selected_features.py"), Path("scripts/restore_canonical_data.py"),
+               Path("scripts/review_part2.py"), Path("scripts/audit_selected_features.py"),
                Path("scripts/finalize_part3.py"), *Path("tests").glob("*.py"), *Path("tests/fixtures").glob("*.csv"),
                run / "all_selection_lock.json", run / "verification.json", run / "run_context.json",
-               run / "part2_audit.json", run / "anonymized_error_examples.csv", run / "validation_ablation.csv",
-               run / "emoji_coverage.json", Path(test_log), output / "results.csv", output / "primary_model.json"]
+               run / "part2_audit.json", run / "anonymized_error_examples.csv",
+               Path(test_log), output / "results.csv", output / "primary_model.json"]
     for path in paths.values():
         members.extend([path, path.with_suffix(".metadata.json")])
     for folder in (run / "training", run / "training_extended", run / "feature_audits"):
@@ -155,7 +157,7 @@ python -m venv .venv
 .\\.venv\\Scripts\\python.exe -m ptit_sentiment.predict --model {paths[primary].as_posix()} --text "Mình chưa hài lòng với lịch học."
 ```
 
-Verifier kiểm tra hash và tải sáu mô hình dự đoán fixture, không cần dữ liệu thật/không train.
+Verifier kiểm tra hash và tải {len(names)} mô hình dự đoán fixture, không cần dữ liệu thật/không train.
 Muốn train/evaluate lại, nhận data/ hiện hành từ người 1 và dùng run-name mới.
 Nhãn hiện tại đều AI, test đã dùng trước đó: chưa phải đánh giá độc lập bằng nhãn người.
 PhoBERT thuộc người 4, chưa được fine-tune trong gói này.
@@ -226,7 +228,7 @@ PhoBERT thuộc người 4, chưa được fine-tune trong gói này.
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--run-name", default="part3_20261012_nv2_v2")
+    parser.add_argument("--run-name", default="part3_final_20261102")
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--archive", required=True)
     parser.add_argument("--test-log", required=True)

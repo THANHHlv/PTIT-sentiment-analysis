@@ -75,11 +75,19 @@ def error_groups(predictions):
 
 def export_evaluation(output_dir, predictions, metadata):
     """Xuất JSON, CSV tổng/per-label, confusion matrix PNG/CSV, câu sai."""
+    required = {"id", "text", "true_label", "predicted_label", "model_name"}
+    missing = required - set(predictions.columns)
+    if missing:
+        raise ValueError(f"Dự đoán thiếu cột: {', '.join(sorted(missing))}.")
+    if set(predictions["model_name"]) != {metadata["model_name"]}:
+        raise ValueError("Tên mô hình trong dự đoán khác metadata.")
+    metrics = compute_metrics(predictions["true_label"].tolist(), predictions["predicted_label"].tolist())
+    if set(metrics) & set(metadata):
+        raise ValueError("Metadata không được ghi đè chỉ số tính từ dự đoán.")
     output_dir = Path(output_dir)
     if output_dir.exists() and any(output_dir.iterdir()):
         raise ValueError(f"{output_dir} đã có kết quả; hãy chọn thư mục đánh giá mới.")
     output_dir.mkdir(parents=True, exist_ok=True)
-    metrics = compute_metrics(predictions["true_label"].tolist(), predictions["predicted_label"].tolist())
     metrics.update(metadata)
     write_json(output_dir / "metrics.json", metrics)
     summary_keys = ("model_name", "split", "provenance", "split_manifest_sha256",

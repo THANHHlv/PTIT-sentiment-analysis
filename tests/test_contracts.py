@@ -9,7 +9,7 @@ from ptit_sentiment.common import write_json
 from ptit_sentiment.data.split import grouped_split, load_split_set, save_splits
 from ptit_sentiment.data.validate import read_csv, validate_frame
 from ptit_sentiment.evaluation.compare import compare_results
-from ptit_sentiment.evaluation.metrics import compute_metrics
+from ptit_sentiment.evaluation.metrics import compute_metrics, export_evaluation, prediction_frame
 from ptit_sentiment.features.vectorizers import make_vectorizer
 from ptit_sentiment.labels import LABELS
 from ptit_sentiment.predict import load_artifact
@@ -77,6 +77,27 @@ class ContractsTest(unittest.TestCase):
         self.assertEqual(result["per_label"]["negative"]["f1"], 0.0)
         self.assertAlmostEqual(result["macro_f1"], 1 / 6)
         self.assertEqual(result["confusion_matrix"]["rows"], "true_label")
+
+    def test_external_model_predictions_export_without_sklearn_artifact(self):
+        """PhoBERT labels use the same metrics, ordering and export contract."""
+        frame = pd.DataFrame({"id": ["a", "b", "c"], "text": ["x", "y", "z"],
+                              "label": list(LABELS)})
+        predictions = prediction_frame(frame, ["neutral"] * 3, "phobert")
+        metadata = {"model_name": "phobert", "split": "test", "provenance": "synthetic",
+                    "split_manifest_sha256": "fixture", "evaluation_data_sha256": "fixture"}
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "evaluation"
+            with self.assertRaisesRegex(ValueError, "ghi đè"):
+                export_evaluation(output, predictions, {**metadata, "accuracy": 1.0})
+            self.assertFalse(output.exists())
+            result = export_evaluation(output, predictions, metadata)
+            matrix = result["confusion_matrix"]["values"]
+            self.assertEqual([sum(row) for row in matrix], [1, 1, 1])
+            self.assertAlmostEqual(result["accuracy"], sum(matrix[i][i] for i in range(3)) / 3)
+            self.assertEqual(sum(v["support"] for v in result["per_label"].values()), 3)
+            self.assertEqual(result["confusion_matrix"]["labels"], list(LABELS))
+            self.assertEqual(len(pd.read_csv(output / "errors.csv")), 2)
+            self.assertTrue((output / "confusion_matrix.png").is_file())
 
     def test_missing_artifact_clear_error(self):
         with self.assertRaisesRegex(FileNotFoundError, "Artifact chưa tồn tại"):

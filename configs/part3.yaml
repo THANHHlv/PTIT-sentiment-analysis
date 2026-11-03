@@ -1,7 +1,4 @@
-# Supplemental validation experiment: 2 ngrams x 3 C x 2 emoji x 2 weights x 2 feature modes.
-# Keep this model separate from the mandatory TF-IDF word + SVM model.
-models: [tfidf_svm]
-model_aliases: {tfidf_svm: tfidf_svm_extended}
+# Current member-3 scope: four word-feature pipelines, fixed before test evaluation.
 preprocessing:
   lowercase: true
   replace_urls: true
@@ -17,10 +14,11 @@ vectorizer:
   max_features: 20000
 grid:
   ngram_range: [[1, 1], [1, 2]]
-  svm_c: [0.1, 1.0, 10.0]
-  emoji: [keep, keep_and_map]
-  svm_class_weight: [null, balanced]
-  tfidf_mode: [word, word_char]
+  nb_alpha: [0.5, 1.0]
+  svm_c: [0.5, 1.0]
+  emoji: [keep]
+  svm_class_weight: [null]
+  tfidf_mode: [word]
   sublinear_tf: [false]
 svm:
   max_iter: 10000

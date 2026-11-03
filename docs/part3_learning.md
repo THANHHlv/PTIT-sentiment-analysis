@@ -113,32 +113,17 @@ Luôn đọc hàng là thật, cột là dự đoán theo thứ tự `positive, 
 | Có thể đổi C sau khi đọc lỗi test? | Đó là thử nghiệm mới có sử dụng test; không tiếp tục gọi điểm cũ là đánh giá độc lập. |
 | Phần 3 đã bao gồm PhoBERT chưa? | Chưa; người 4 cần dùng cùng manifest và hàm đánh giá chung. |
 
-## Phần bổ sung sau cập nhật NV2
+## Cấu hình và phạm vi hiện hành
 
-`FeatureUnion` nối ma trận TF-IDF word với TF-IDF char_wb (3,5).
-Char n-gram là đoạn ký tự trong biên từ; có thể chia sẻ đặc trưng giữa các biến thể
-viết/tiếng lóng, nhưng không tự hiểu mỉa mai hay ngữ cảnh hội thoại.
-Cả hai nhánh lấy cùng text đã chuẩn hóa/tách từ và chỉ fit train; mỗi nhánh L2 riêng.
-Model mới được chọn có 3569 cột từ + 20000 cột ký tự, validation không có vector 0.
-Không thay thế bốn tổ hợp bắt buộc bằng nhánh bổ sung này.
+Lần part3_final_20261102 dùng n-gram (1,1)/(1,2), alpha=0.5/1 và C=0.5/1.
+Mỗi tổ hợp có bốn ứng viên; chọn Macro-F1 validation, hòa lấy ứng viên đầu YAML.
+TF-IDF + SVM, unigram, C=1 đứng đầu validation; không đổi lựa chọn theo test.
+Không refit train+validation; pipeline lưu đã fit trên train.
+class_weight=None được giữ cố định trong lần này. Nếu dùng balanced trong một
+thực nghiệm khác, trọng số lớp là n_train/(3 × số mẫu lớp đó), chỉ tính từ train.
+Không thử balanced sau khi đọc kết quả test của lần này.
 
-`class_weight=balanced` ở SVM đặt trọng số lớp theo `n_train / (3 × n_train_lớp)`.
-Lớp ít mẫu chịu trọng số lỗi cao hơn; đây không phải nhân bản dữ liệu, đổi nhãn
-hay bảo đảm mọi lớp sẽ có recall cao. Word-char + balanced được chọn từ validation;
-word + balanced riêng không tăng Macro-F1 ở nhóm cấu hình tốt nhất lần này.
-
-`keep_and_map` giữ emoji và thêm từ ánh xạ cho emoji có trong bảng của NV2.
-Cache tách theo emoji tránh dùng lại sai text khi tìm tham số. Tests có ví dụ hỗ trợ
-để xác minh đường này; dữ liệu thật hiện không chứa emoji trong bảng ánh xạ,
-nên đầu vào keep/keep_and_map giống nhau và chưa thể đo ích lợi thực nghiệm của mapping.
-
-BoW+NB đứng đầu validation mới (0.616621), BoW+SVM đứng đầu test trong bốn tổ hợp
-bắt buộc (0.547529); word-char+SVM bổ sung đạt Macro-F1 test 0.563401.
-Không đổi lựa chọn chính theo thứ hạng test. Đây là so sánh trên test đã dùng trước đó,
-chưa phải kiểm chứng độc lập của phiên bản mới. Cần test mới có nhãn người để xác nhận.
-
-Code: [pipeline](../src/ptit_sentiment/models/classical.py),
-[audit hai nhánh](../scripts/audit_selected_features.py),
-[runner và khóa chung](../scripts/run_part3.py).
-Xem [báo cáo hiện hành](../report/report.md),
-[phân tích lỗi](../report/part3_error_analysis.md), [bàn giao](part3_handoff.md).
+Bốn model bắt buộc và baseline neutral chạy CPU; không huấn luyện PhoBERT.
+Code và đầu vào NV2 giữ nguyên. Nhãn vẫn là AI theo manifest; Excel review là
+bản riêng, chưa được ghép vào thí nghiệm. Đọc [báo cáo](../report/report.md),
+[phân tích lỗi](../report/part3_error_analysis.md) và [bàn giao](part3_handoff.md).

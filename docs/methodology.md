@@ -1,71 +1,61 @@
-# Phương pháp thực nghiệm
+# Phương pháp thực nghiệm người 3
 
-## Dữ liệu và bộ chia
+Lần hiện hành: part3_final_20261102; cấu hình [part3.yaml](../configs/part3.yaml).
+Không đổi dữ liệu, nhãn, bộ chia, quy tắc tiền xử lý hoặc vectorizer của người 2.
 
-Dùng nguyên bộ ai_initial_4e93595ef7d1_seed42: 2.600 bình luận thật mang nhãn AI,
-train/validation/test = 1.801/409/390. Chia theo post_id và ràng buộc trùng/gần trùng,
-seed 42; tỷ lệ thực tế ghi trong manifest. ID, bài và nội dung chuẩn hóa không giao nhau.
-Nhãn AI đo mức phù hợp với bộ nhãn AI, chưa thay đánh giá bằng nhãn người độc lập.
+## Dữ liệu và tránh rò rỉ
 
-Không chia lại bộ hiện hành. Quy trình với dữ liệu mới: validate → chia theo bài →
-fit train → chọn Macro-F1 validation → khóa artifact → evaluate test → phân tích lỗi.
-[Hợp đồng dữ liệu](data_contract.md) quy định schema và nguồn nhãn.
+Dùng dataset ai_initial_4e93595ef7d1_seed42, seed 42: train 1.801, validation 409,
+test 390; cả ba tập đủ positive/neutral/negative. Chia theo bài và các ràng buộc
+trùng/gần trùng đã nhúng trong manifest. Validator kiểm tra hash, ID, post_id,
+nội dung chuẩn hóa và phân bố nhãn trước khi chạy.
 
-## Tiền xử lý và đặc trưng
+Tất cả nhãn hiện hành vẫn ai/ai_labeled; chưa có nhãn người xác nhận trong manifest.
+Excel review được giữ riêng ở outputs/label_review/, không ghép vào lần chạy này.
+Test đã được sử dụng trong các lần trước; đây là thực nghiệm bổ sung trên test đã biết,
+không gọi là đánh giá độc lập trên dữ liệu mới hoặc nhãn người.
 
-Cấu hình thực nghiệm: [part3_v2.yaml](../configs/part3_v2.yaml).
-Chuẩn hóa NFC/khoảng trắng/ký tự lỗi, lowercase, thay URL và che email/điện thoại/@handle.
-Mở rộng ko/khum/hok → không; giữ k/dc/đc/mn/sv vì đa nghĩa. Giữ emoji, dấu câu,
-không bỏ stop words và phủ định. Underthesea nối từ nhiều âm tiết bằng underscore.
-Text gốc không bị ghi đè. Các từ điển quy tắc không được sửa theo lỗi test.
+## Pipeline và lựa chọn
 
-BoW dùng CountVectorizer; TF-IDF dùng TfidfVectorizer với smooth_idf, chuẩn L2.
-Vocabulary và IDF chỉ học train. Thử word n-gram (1,1)/(1,2), min_df=1,
-max_df=1.0, max_features=20000. Nhánh bổ sung nối TF-IDF word và char_wb (3,5),
-chuẩn L2 từng nhánh, không chuẩn hóa lại sau nối.
+Text gốc → TextPreprocessor của người 2 → CountVectorizer/TfidfVectorizer → NB/LinearSVC.
+BoW là số đếm; TF-IDF dùng smooth IDF và chuẩn L2. Vocabulary/DF/IDF chỉ học train.
+Validation, test và câu mới chỉ transform/predict. Tiền xử lý theo quy tắc không học nhãn
+được cache cho cùng chế độ emoji; mỗi ứng viên có vectorizer/classifier riêng.
 
-## Chọn mô hình truyền thống
+Bốn tổ hợp, mỗi tổ hợp bốn ứng viên: word n-gram (1,1)/(1,2) ×
+alpha=0.5/1.0 hoặc C=0.5/1.0. Tổng 16 ứng viên. class_weight=None được chốt trước;
+không mở lưới sau khi xem test. TF-IDF word, không dùng nhánh word-char trong lần này.
+Giữ min_df=1, max_df=1.0, max_features=20000 và cấu hình tiền xử lý bàn giao.
 
-Bốn tổ hợp BoW/TF-IDF × MultinomialNB/LinearSVC, mỗi tổ hợp sáu ứng viên:
-alpha NB=0.1/0.5/1 hoặc C SVM=0.1/1/10 kết hợp hai word n-gram. Tổng 24 lượt fit.
-Baseline học nhãn phổ biến nhất train, hiện là neutral.
-
-[part3_v2_extended.yaml](../configs/part3_v2_extended.yaml) thử riêng TF-IDF + SVM:
-2 n-gram × 3 C × 2 emoji × 2 class weights × 2 biểu diễn = 48 ứng viên.
-Dùng tên tfidf_svm_extended để phân biệt bốn tổ hợp bắt buộc.
-Emoji keep_and_map không đổi đầu vào ở bộ này do không có emoji thuộc bảng ánh xạ;
-chưa thể kết luận hiệu quả mapping từ điểm bằng nhau.
-
-Chọn bằng Macro-F1 validation, đủ ba nhãn, zero_division=0; hòa lấy ứng viên đầu
-trong YAML. Không refit train+validation. BoW+NB được chọn làm mô hình chính.
-Các pipeline đã khóa trước lệnh test của lần 12/10. Test từng được dùng ngày 09/10,
-nên lần 12/10 là so sánh bổ sung trên cùng test, chưa phải xác nhận độc lập.
-Không chỉnh tham số hoặc nhãn tiếp theo lỗi test này.
+Chọn Macro-F1 validation; hòa lấy cấu hình đầu YAML. Không refit train+validation.
+Lưu pipeline/metadata, kiểm tra dự đoán trước/sau joblib và điểm validation từ text gốc.
+Khóa SHA-256 mọi artifact trước evaluate test. Baseline dự đoán lớp phổ biến nhất
+chỉ học từ train, để đối chiếu với bốn thuật toán bắt buộc.
 
 ## Đánh giá và truy vết
 
-Xuất Accuracy, Precision/Recall/F1/support từng nhãn, Macro-P/R/F1;
-confusion matrix hàng nhãn thật, cột dự đoán, thứ tự positive/neutral/negative.
-Compare chỉ nhận cùng manifest, test hash, provenance và số mẫu.
-SVM decision score không phải xác suất hay độ mạnh cảm xúc.
+Accuracy, P/R/F1/support từng nhãn và Macro-P/R/F1 dùng đủ ba nhãn,
+zero_division=0. Confusion matrix có hàng nhãn thật, cột dự đoán, thứ tự
+positive/neutral/negative. Macro-F1 là trung bình ba F1, không phải F1 của Macro-P/R.
+SVM không xuất xác suất. Metadata không được ghi đè chỉ số tính từ dự đoán.
 
-outputs/part3_20261012_nv2_v2/ giữ lịch sử lựa chọn, metadata, khóa SHA-256,
-ma trận, dự đoán, lỗi và audit. outputs/part3_completion_20261021/ giữ kết quả
-validation và lựa chọn chính. [Bằng chứng báo cáo](../report/evidence/README.md)
-được xuất từ các kết quả này, không chứa text bình luận.
-25 trích đoạn lỗi đã ẩn danh là mẫu định tính có chủ đích; tách quan sát và giả thuyết,
-không dùng để suy ra tỷ lệ nguyên nhân của cả bộ.
+Các kết quả chỉ được ghép khi cùng manifest, hash CSV đánh giá, split, provenance
+và số mẫu. Người 4 có thể dùng trực tiếp compute_metrics, prediction_frame,
+export_evaluation trong [metrics.py](../src/ptit_sentiment/evaluation/metrics.py)
+cho đầu ra PhoBERT mà không cần artifact sklearn.
 
-## PhoBERT
+Log nằm trong outputs/part3_final_20261102/: training/, feature_audits/,
+all_selection_lock.json, evaluation/, verification.json; delivery/ giữ kết quả
+validation và gói bàn giao được kiểm tra sau giải nén.
+[Báo cáo](../report/report.md) chỉ dùng số liệu của lần này.
 
-Code fine-tune có trong [train_phobert.py](../src/ptit_sentiment/training/train_phobert.py),
-nhưng chưa có mô hình PhoBERT huấn luyện trên bộ chia hiện hành.
-Checkpoint smoke và mô hình trên bộ chia cũ được lưu trong ZIP dọn dự án,
-không đưa điểm cũ vào bảng so sánh hiện tại.
+## Phân tích lỗi và giới hạn
 
-Đầu vào riêng: NFC/khoảng trắng → RDRSegmenter VnCoreNLP → tokenizer PhoBERT
-use_fast=False → truncation bên phải → padding động. Giữ hoa thường/URL/slang/emoji;
-không áp toàn bộ cleaning của mô hình truyền thống. Giới hạn tối đa 256 token kể cả
-special tokens; code ghi thống kê mẫu bị cắt từng tập. Java và VnCoreNLP model cần sẵn.
-Chọn checkpoint theo Macro-F1 validation, dùng cùng manifest và ánh xạ nhãn.
-Xem [hướng dẫn chạy](../README.md) và [tài liệu học](learning_guide.md).
+Chọn mô hình chính bằng validation trước test. Ví dụ lỗi được đọc từ errors.csv,
+trích nguyên văn và loại thông tin nhận diện; mã E01–E25 liên kết đến ID thật trong
+file local error_examples.csv. Tách quan sát với giả thuyết chưa kiểm định.
+Không dùng lỗi để sửa nhãn hoặc tuning tiếp. Các nhóm lỗi tự động có thể giao nhau.
+
+Người 4 tự fine-tune PhoBERT với đầu vào riêng và cùng manifest. Không có điểm
+PhoBERT trong bảng hiện hành; cần nhận artifact/output thật của họ trước khi so sánh.
+Nhãn AI, mất cân bằng lớp, một bộ chia và test đã dùng là các giới hạn bắt buộc ghi.

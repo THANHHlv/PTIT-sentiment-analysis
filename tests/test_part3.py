@@ -28,7 +28,7 @@ class Part3Test(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             save_splits("tests/fixtures/synthetic.csv", root / "splits", (.7, .15, .15), 42, 500, "synthetic")
-            config = yaml.safe_load(Path("configs/part3_v2.yaml").read_text(encoding="utf-8"))
+            config = yaml.safe_load(Path("configs/part3.yaml").read_text(encoding="utf-8"))
             config["vectorizer"].update(sublinear_tf=True, norm="l2", use_idf=True, smooth_idf=True)
             config["grid"].pop("sublinear_tf")
             config["grid"].update(ngram_range=[[1, 1]], nb_alpha=[0.1], svm_c=[1.0])
@@ -54,7 +54,7 @@ class Part3Test(unittest.TestCase):
             source["text"] = source["text"] + " 😢"
             source.to_csv(root / "source.csv", index=False, encoding="utf-8")
             save_splits(root / "source.csv", root / "splits", (.7, .15, .15), 42, 500, "synthetic")
-            config = yaml.safe_load(Path("configs/part3_v2.yaml").read_text(encoding="utf-8"))
+            config = yaml.safe_load(Path("configs/part3.yaml").read_text(encoding="utf-8"))
             config.update(models=["tfidf_svm"], model_aliases={"tfidf_svm": "tfidf_svm_extended"})
             config["grid"].update(ngram_range=[[1, 1]], svm_c=[1.0],
                                   emoji=["keep", "keep_and_map"],
@@ -105,14 +105,14 @@ class Part3Test(unittest.TestCase):
             save_splits("tests/fixtures/synthetic.csv", root / "splits", (.7, .15, .15), 42, 500, "synthetic")
             fake = SimpleNamespace(word_tokenize=lambda text, format: text)
             with patch.dict("sys.modules", {"underthesea": fake}):
-                train_models(root / "splits", "configs/part3_v2.yaml", root / "models", root / "logs")
+                train_models(root / "splits", "configs/part3.yaml", root / "models", root / "logs")
                 lock = read_json(root / "logs/selection_lock.json")
                 self.assertFalse(lock["test_predictions_computed"])
                 for name in MODEL_NAMES:
                     model, metadata = load_artifact(root / "models" / (name + ".joblib"))
                     self.assertFalse(metadata["refit_train_validation"])
                     search = read_json(root / "logs" / (name + "_validation_search.json"))
-                    self.assertEqual(len(search["trials"]), 6)
+                    self.assertEqual(len(search["trials"]), 4)
                     self.assertEqual(metadata["validation_macro_f1"], max(t["validation_macro_f1"] for t in search["trials"]))
                     before = dict(model.named_steps["vectorizer"].vocabulary_)
                     idf = getattr(model.named_steps["vectorizer"], "idf_", np.array([])).copy()

@@ -94,8 +94,8 @@ def main():
     shutil.copyfile(root / "verification.json", output / "verification.json")
     write_json(output / "phobert_status.json", {
         "status": "not_trained_on_current_split", "split_manifest_sha256": manifest_hash,
-        "note": "Checkpoint smoke/bộ chia cũ đã lưu trữ, không phải kết quả của bộ hiện hành.",
-        "historical_archive": "outputs/archives/project_cleanup_20261023.zip"})
+        "note": "Chỉ giữ metadata/log của checkpoint cũ; trọng số smoke/bộ chia cũ đã loại bỏ.",
+        "historical_archive": "outputs/archives/project_history_20261101.zip"})
     (output / "README.md").write_text(
         "# Bằng chứng báo cáo hiện hành\n\n"
         f"Dataset: {manifest['dataset_version']}; nguồn: {root.as_posix()}.\n\n"

@@ -4,7 +4,7 @@ Lệnh cài/chạy ở [README](../README.md); dữ liệu hiện tại ở [h�
 Ví dụ tính tay trong tài liệu chỉ dùng để học.
 
 Phần người 3 sau cập nhật NV2 đã chạy thực nghiệm thật: xem
-[hướng dẫn NB/SVM và word-char](part3_learning.md),
+[hướng dẫn NB/SVM](part3_learning.md),
 [báo cáo mới](../report/report.md) và [bàn giao](part3_handoff.md).
 Điểm số dùng nhãn AI trên test đã dùng trước đó, chưa thay thế đánh giá độc lập bằng nhãn người.
 

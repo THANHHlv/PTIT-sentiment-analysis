@@ -19,7 +19,7 @@ Text gốc được giữ trong CSV; pipeline nhận text gốc và xử lý khi
 
 ## Cấu hình được dùng trong thực nghiệm
 
-[part3_v2.yaml](../configs/part3_v2.yaml) chuẩn hóa NFC/khoảng trắng/ký tự lỗi,
+[part3.yaml](../configs/part3.yaml) chuẩn hóa NFC/khoảng trắng/ký tự lỗi,
 chuyển chữ thường, thay URL, che email/điện thoại/@handle. Chỉ mở rộng ko/khum/hok
 thành không; giữ k/dc/đc/mn/sv vì đa nghĩa. Giữ emoji/dấu câu, stop words rỗng;
 không loại phủ định. Underthesea tách từ trước vectorizer.
@@ -27,10 +27,10 @@ không loại phủ định. Underthesea tách từ trước vectorizer.
 BoW và TF-IDF thử unigram, unigram–bigram; min_df=1, max_df=1.0, max_features=20000.
 Vocabulary, DF và IDF chỉ học từ train. Các ma trận là sparse không âm:
 unigram 3.569 cột, unigram–bigram 17.841 cột.
-Nhánh bổ sung TF-IDF word-char nối hai vector L2 riêng, char_wb (3,5).
+Module cũng hỗ trợ word-char; lần người 3 hiện hành chỉ dùng đặc trưng word.
 
 [configs/classical.yaml](../configs/classical.yaml) giữ cấu hình NV2 tổng quát;
-muốn tái lập điểm báo cáo phải dùng part3_v2 và part3_v2_extended.
+muốn tái lập điểm báo cáo hiện hành dùng configs/part3.yaml.
 
 ## Đối chiếu tích hợp
 
@@ -38,7 +38,7 @@ muốn tái lập điểm báo cáo phải dùng part3_v2 và part3_v2_extended.
 byte CSV theo bản chuẩn vì sai khác CRLF/LF. Manifest giữ nguyên;
 [.gitattributes](../.gitattributes) bảo vệ byte khi checkout.
 
-Bằng chứng hiện hành: outputs/part3_20261012_nv2_v2/part2_audit.json và
+Bằng chứng hiện hành: outputs/part3_final_20261102/part2_audit.json và
 feature_audits/. Các audit kiểm tra vocabulary/IDF chỉ từ train, heldout không
 đổi tham số và pipeline tải lại cho điểm validation đúng điểm lựa chọn.
 Script [review_part2.py](../scripts/review_part2.py) kiểm tra tích hợp;
@@ -46,4 +46,4 @@ Script [review_part2.py](../scripts/review_part2.py) kiểm tra tích hợp;
 
 Kết quả và API cho người 4 ở [bàn giao người 3](part3_handoff.md);
 phương pháp ở [methodology.md](methodology.md), số liệu ở [báo cáo](../report/report.md).
-Bản lịch sử và file chạy thử đã chuyển vào outputs/archives/project_cleanup_20261023.zip.
+Bản lịch sử và file chạy thử đã chuyển vào outputs/archives/project_history_20261101.zip.

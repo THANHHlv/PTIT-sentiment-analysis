@@ -5,17 +5,13 @@ __pycache__/
 .pytest_cache/
 # Mặc định bỏ qua dữ liệu phát sinh; chỉ theo dõi bộ hiện hành bên dưới.
 /data/*
-!/data/README.md
-!/data/examples/
-!/data/raw/
 !/data/labeled/
 !/data/splits/
-data/raw/*
 data/labeled/*
 data/splits/*
 !**/.gitkeep
 
-# Dữ liệu đã gán nhãn và đối soát hiện hành được phép đưa lên GitHub.
+# Bộ labeled hiện hành; không thêm dữ liệu thô hoặc hồ sơ nhận diện.
 !data/labeled/labeled_comments.csv
 
 # Bộ chia dùng chung và metadata cần thiết để kiểm tra/tái lập.

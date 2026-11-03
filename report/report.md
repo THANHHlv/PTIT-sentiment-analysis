@@ -1,32 +1,20 @@
-# Phần người 3 — NB, SVM, đánh giá và phân tích lỗi
-
-Bản bàn giao hoàn thiện và kiểm chứng lại ngày 21/10/2026, sử dụng mô hình đã khóa của lần 12/10.
-Không huấn luyện/chọn lại từ test. Lệnh mặc định hiện dùng configs/part3_v2.yaml.
-67 tests đạt; đã bổ sung kiểm tra cấu hình TF-IDF, điểm raw-text validation và gói bàn giao.
-Kết quả validation đầy đủ ở outputs/part3_completion_20261021/validation/.
-Bảng tổng hợp và lựa chọn chính: results.csv, primary_model.json trong thư mục đó.
-Gói riêng cho nhóm: handoff/NV3_20261021.zip; nguồn nhãn AI/test đã dùng được ghi trong metadata.
-Xem [bàn giao hiện hành](../docs/part3_handoff.md).
-
-
-Đã hoàn thành sửa tích hợp, audit dữ liệu, train và evaluate bốn pipeline bắt buộc,
-majority baseline và một TF-IDF word-char + SVM bổ sung bằng CPU.
-Lần chạy: **part3_20261012_nv2_v2**; artifact và output hiện hành được giữ nguyên.
-Toàn bộ nhãn là AI ban đầu; test đã dùng ngày 09/10. Đây là so sánh bổ sung
-trên cùng test, **chưa phải đánh giá độc lập trên dữ liệu mới hoặc nhãn người**.
-PhoBERT chưa được fine-tune/đánh giá trong nhiệm vụ người 3.
-
-
-Ngày 21/10, người dùng chọn tiếp tục sử dụng bộ nhãn AI ban đầu. Bản Excel 390 câu
-được điền lại đúng nhãn đang dùng trong thực nghiệm, không tạo test label từ dự đoán NB/SVM.
-25 nhãn người dùng nhập được bảo toàn như bản nháp, chưa được dùng làm human_confirmed.
-Không có thay đổi nhãn, bộ chia hoặc huấn luyện lại; các kết quả bên dưới giữ nguyên.
-
-## 1. Dữ liệu và bàn giao NV2
+# Người 3 — Huấn luyện và đánh giá mô hình truyền thống
 
 Đề tài: **Xây dựng hệ thống phân loại cảm xúc bình luận của sinh viên PTIT trên các nhóm Facebook**.
-Dataset `ai_initial_4e93595ef7d1_seed42`, seed 42. Giữ bộ chia theo nhóm bài và các
-ràng buộc trùng/gần trùng hiện có; không thu thập, đổi nhãn hoặc chia lại.
+Lần huấn luyện thực tế: **part3_final_20261102**, ngày 02/11/2026, CPU.
+Đã chạy lại demo và đánh giá bốn pipeline để tổng hợp báo cáo ngày 02/11/2026.
+Phạm vi: bốn tổ hợp BoW/TF-IDF × MultinomialNB/LinearSVC và baseline đối chiếu.
+Không thu thập, gán lại nhãn, chia lại dữ liệu, viết lại tiền xử lý hoặc train PhoBERT.
+
+TF-IDF + SVM được chọn bằng Macro-F1 validation (0,577487). Trên 390 câu test,
+mô hình đạt Accuracy 71,79% và Macro-F1 0,5354. Hai lớp positive/negative còn
+khó nhận diện; kết quả demo cũng cho thấy những dự đoán chưa phù hợp sắc thái.
+Vì vậy, kết quả cần được diễn giải trong phạm vi bộ nhãn AI và test đã sử dụng.
+
+## 1. Đầu vào và nguồn nhãn
+
+Dùng trực tiếp bộ dữ liệu/bộ chia do người 1 và code tiền xử lý/đặc trưng do người 2 bàn giao.
+Dataset ai_initial_4e93595ef7d1_seed42, seed 42.
 
 | Tập | Số câu | Số bài | positive | neutral | negative |
 |---|---:|---:|---:|---:|---:|
@@ -35,201 +23,284 @@ ràng buộc trùng/gần trùng hiện có; không thu thập, đổi nhãn ho�
 | Test | 390 | 57 | 50 | 271 | 69 |
 | Tổng | 2600 | 446 | 362 | 1800 | 438 |
 
-2600/2600 dòng có `label_source=ai`, `annotation_status=ai_labeled`;
-`human_labels_confirmed=false`. Không giao ID/post_id/nội dung chuẩn hóa hoặc các
-cặp gần trùng đã ghi trong manifest. Tổng ba tập khớp mọi cột của bảng labeled.
-Nhãn chung positive=0, neutral=1, negative=2.
+Tất cả nhãn vẫn có label_source=ai, annotation_status=ai_labeled; human_labels_confirmed=false.
+Đây là nhãn tham chiếu AI của bộ bàn giao, chưa phải nhãn người độc lập. Excel review trong
+outputs/label_review/ được giữ riêng, chưa ghép vào lần chạy này. Test đã được dùng ở các lần
+trước; lần hiện hành là so sánh bổ sung trên cùng test, không phải kiểm chứng độc lập mới.
 
-Sau pull, hai module mô hình/train có marker merge và bốn CSV sai hash do CRLF/LF.
-Đã ghép đúng code NV2/NV3 và khôi phục byte từ ZIP sau khi kiểm tra bản chuẩn
-khớp manifest và bản hiện tại chỉ khác xuống dòng. Manifest/nhãn/bộ chia giữ nguyên.
-Bản cũ được lưu trong `outputs/archives/project_cleanup_20261023.zip`; `.gitattributes` bảo vệ EOL.
-[Audit NV2 mới](../docs/nv2_handoff.md) ghi chi tiết và các tài liệu bàn giao còn thiếu.
+Manifest SHA-256: c743878f73ef20ef786f46f46c62511b894a10891c2893de8d75cb753522e4e3.
+Test SHA-256: afcb8ce871c14ea258fc02a8ec56596a2c7e2e034b88d2437f2cdffdc0184312.
+Kiểm tra ID/bài/nội dung chuẩn hóa và ràng buộc gần trùng theo manifest đạt; không đổi hash để vượt kiểm tra.
 
-Manifest SHA-256: `c743878f73ef20ef786f46f46c62511b894a10891c2893de8d75cb753522e4e3`.
-Test SHA-256: `afcb8ce871c14ea258fc02a8ec56596a2c7e2e034b88d2437f2cdffdc0184312`.
+## 2. Cơ sở mô hình
 
-## 2. Tiền xử lý, đặc trưng và mô hình
+### Multinomial Naive Bayes
 
-Text gốc → NFC/khoảng trắng/ký tự lỗi → che email/điện thoại/@handle, lowercase,
-thay URL, mở rộng ko/khum/hok → Underthesea → vectorizer → classifier.
-Giữ k/dc/đc/mn/sv do đa nghĩa; giữ phủ định/emoji/dấu câu, không loại stop words.
-Pipeline lưu nhận text gốc; không train lại khi predict.
+Với vector không âm x, mô hình chọn lớp có điểm log P(c) + Σ_j x_j log θ_cj lớn nhất.
+θ_cj = (N_cj + alpha)/(Σ_k N_ck + alpha × V), với V là số đặc trưng, N_cj là tổng
+giá trị đặc trưng j trong lớp c của train. Alpha làm trơn để tránh xác suất bằng 0;
+alpha lớn làm phân bố token bớt cực đoan. Giả định độc lập có điều kiện giúp mô hình
+đơn giản, nhưng hạn chế biểu diễn quan hệ giữa từ. BoW dùng số đếm; TF-IDF không âm
+vẫn có thể dùng thực dụng với NB dù không còn số đếm nguyên.
+[Tài liệu MultinomialNB 1.5.2](https://scikit-learn.org/1.5/modules/generated/sklearn.naive_bayes.MultinomialNB.html).
 
-BoW là số đếm; TF-IDF học vocabulary/DF/IDF chỉ từ train và chuẩn hóa L2.
-Word unigram có 3569 cột, unigram–bigram có 17841 cột;
-min_df=1, max_df=1.0, max_features=20000. Ma trận sparse không âm.
-Các cấu hình từ có 0/9/4 vector 0 ở train/validation/test.
+### SVM tuyến tính
 
-MultinomialNB học prior lớp và phân bố token có làm trơn alpha, giả định độc lập có điều kiện.
-LinearSVC học điểm tuyến tính one-vs-rest; C điều chỉnh phạt vi phạm lề, không xuất xác suất.
-Baseline học lớp phổ biến nhất chỉ từ train: neutral.
-SVM dùng L2, squared hinge, dual=auto, tol=1e-4, max_iter=10000, random_state=42;
-bắt ConvergenceWarning, tăng max_iter=100000 và thử lại một lần khi cần.
+LinearSVC học ba hàm one-vs-rest w_c·x+b_c và chọn lớp có điểm cao nhất.
+C điều chỉnh mức phạt vi phạm lề so với điều chuẩn; C lớn không bảo đảm tốt hơn
+trên dữ liệu mới. Dùng L2, squared hinge, dual=auto, tol=1e-4, max_iter=10000, seed 42.
+Code bắt cảnh báo hội tụ, thử lại tối đa một lần với max_iter=100000 rồi báo lỗi nếu vẫn chưa hội tụ.
+class_weight=None được chốt trong lần này. Nếu dùng balanced trong nghiên cứu khác, trọng số
+lớp bằng n_train/(3 × số mẫu lớp), chỉ tính từ train. Không thử thêm sau khi xem test.
+Decision score của SVM không phải xác suất hoặc độ mạnh cảm xúc.
+[Tài liệu LinearSVC 1.5.2](https://scikit-learn.org/1.5/modules/generated/sklearn.svm.LinearSVC.html).
 
-Nhánh bổ sung ghép TF-IDF word và char_wb n-gram (3,5), trần 20000 cột mỗi nhánh.
-Char lấy từ cùng text đã xử lý/tách từ, không phải text gốc. Hai nhánh chuẩn hóa L2
-riêng rồi nối, không chuẩn hóa lại toàn vector. Artifact được chọn có 3569+20000=23569 cột,
-0 vector 0 ở train/validation. Audit cả vocabulary/IDF của hai nhánh với train;
-heldout không đổi tham số. Công thức NB/SVM/độ đo ở [tài liệu học](../docs/part3_learning.md).
+## 3. Pipeline và thiết kế thực nghiệm
 
-## 3. Thiết kế thực nghiệm và khóa lựa chọn
+Text gốc → TextPreprocessor của người 2 → vectorizer → classifier. Pipeline joblib
+chứa đủ ba bước, nhận text gốc khi predict. Giữ nguyên NFC/khoảng trắng, che thông tin
+nhạy cảm, thay URL, slang map ko/khum/hok, Underthesea, emoji keep và stop words rỗng.
+Không thay luật tiền xử lý theo lỗi test.
 
-[part3_v2.yaml](../configs/part3_v2.yaml): 6 ứng viên mỗi tổ hợp,
-ngram từ (1,1)/(1,2), alpha NB=0.1/0.5/1, C SVM=0.1/1/10;
-emoji keep, SVM không cân bằng lớp, TF-IDF word. Tổng **24 lượt fit** bắt buộc.
+BoW dùng CountVectorizer; TF-IDF dùng TfidfVectorizer, smooth IDF, chuẩn L2.
+min_df=1, max_df=1.0, max_features=20000. Vocabulary/DF/IDF chỉ học train; validation/test
+chỉ transform. Tiền xử lý theo quy tắc được cache cho cùng chế độ emoji; mỗi ứng viên
+vẫn có vectorizer/classifier riêng. Không fit trên train+validation.
+Cấu trúc này theo [Pipeline của scikit-learn](https://scikit-learn.org/1.5/modules/generated/sklearn.pipeline.Pipeline.html).
 
-[part3_v2_extended.yaml](../configs/part3_v2_extended.yaml): riêng TF-IDF + SVM,
-2 ngrams × 3 C × 2 emoji (keep/keep_and_map) × 2 class weights (None/balanced)
-× 2 biểu diễn (word/word_char) = **48 lượt fit bổ sung**.
-Không thử trigram/min_df/sublinear_tf trong lần này; dùng tên `tfidf_svm_extended` riêng.
+[part3.yaml](../configs/part3.yaml) chốt trước lần đánh giá: word n-gram (1,1)/(1,2);
+NB alpha=0.5/1.0; SVM C=0.5/1.0; class_weight=None. Mỗi tổ hợp có 4 ứng viên, tổng 16.
+Chọn Macro-F1 validation, hòa lấy cấu hình đầu YAML. Không dùng nhánh word-char trong lần này.
+Baseline học lớp phổ biến nhất từ train: neutral.
 
-Mỗi ứng viên chỉ fit train, chọn bằng Macro-F1 validation trên đủ ba nhãn,
-zero_division=0. Hòa lấy ứng viên đầu trong YAML; không refit train+validation.
-Cache tiền xử lý riêng theo emoji; vectorizer/classifier từng ứng viên độc lập.
-Tổng 72 ứng viên; **60 lượt SVM hội tụ ngay**, không retry/cảnh báo hội tụ.
-Raw-text validation score của pipeline đã lưu khớp điểm lựa chọn.
-
-| Mô hình | Word n-gram | alpha / C | Macro-F1 validation |
+| Mô hình | N-gram chọn | Tham số chọn | Macro-F1 validation |
 |---|---|---|---:|
-| BoW + NB | unigram | alpha=0.1 | 0.616621 |
-| TF-IDF word + NB | unigram | alpha=0.1 | 0.504317 |
-| BoW + SVM | unigram | C=1 | 0.558472 |
-| TF-IDF word + SVM | unigram | C=1 | 0.577487 |
-| TF-IDF word-char + SVM (bổ sung) | unigram | C=1; balanced | 0.605381 |
+| BoW + NB | (1,1) | alpha=0.5 | 0.561527 |
+| TF-IDF + NB | (1,1) | alpha=0.5 | 0.344149 |
+| BoW + SVM | (1,1) | C=0.5 | 0.566607 |
+| TF-IDF + SVM | (1,1) | C=1 | 0.577487 |
 
-BoW+NB đứng đầu validation nên được chọn làm mô hình chính để phân tích lỗi.
-Nhánh bổ sung chọn word-char, unigram, C=1, balanced, emoji keep.
+**TF-IDF + SVM là mô hình chính**, được chọn bằng validation trước khi xem kết quả test
+của lần chạy này. Các khóa selection_lock.json và all_selection_lock.json lưu thời điểm,
+hash cấu hình và artifact trước evaluate test. Không đổi lựa chọn sau khi đọc test.
 
-Bảng sau chọn n-gram/C tốt nhất **trong từng nhóm bằng validation**;
-vì C có thể khác nhau, chênh lệch không phải thí nghiệm chỉ đổi một yếu tố.
-Chi tiết ở `training_extended/` và `validation_ablation.csv`.
+## 4. Chỉ số đánh giá
 
-| Biểu diễn | Emoji | Class weight | Word n-gram | C | Macro-F1 validation |
-|---|---|---|---|---:|---:|
-| word | keep | None | unigram | 1 | 0.577487 |
-| word | keep | balanced | unigram | 1 | 0.576425 |
-| word-char | keep | None | unigram | 10 | 0.579014 |
-| word-char | keep | balanced | unigram | 1 | 0.605381 |
-| word | keep_and_map | None | unigram | 1 | 0.577487 |
-| word | keep_and_map | balanced | unigram | 1 | 0.576425 |
-| word-char | keep_and_map | None | unigram | 10 | 0.579014 |
-| word-char | keep_and_map | balanced | unigram | 1 | 0.605381 |
+Với từng nhãn, Precision=TP/(TP+FP), Recall=TP/(TP+FN), F1=2PR/(P+R); support là số mẫu thật.
+Accuracy là tổng đường chéo confusion matrix chia số mẫu. Macro-P/R/F1 là trung bình
+không trọng số của từng chỉ số qua ba nhãn; Macro-F1 không phải F1 tính từ Macro-P/R.
+Dùng zero_division=0 khi mẫu số bằng 0. Macro-F1 giúp thấy chất lượng hai lớp ít mẫu
+thay vì để neutral chi phối như Accuracy. Hàm đánh giá dùng chung đủ ba nhãn
+positive/neutral/negative cho cả NB, SVM và nhãn dự đoán PhoBERT.
+[Tài liệu precision_recall_fscore_support](https://scikit-learn.org/1.5/modules/generated/sklearn.metrics.precision_recall_fscore_support.html).
 
-Unicode emoji được nhận diện ở 3 train/10 validation/0 test, nhưng **0 câu đổi đầu ra**
-giữa keep và keep_and_map vì không có emoji thuộc bảng ánh xạ hiện tại.
-Điểm bằng nhau chưa đánh giá được hiệu quả ánh xạ trên dữ liệu có độ phủ phù hợp;
-48 lượt fit chỉ có 24 tổ hợp tạo đầu vào khác nhau. Xem `emoji_coverage.json`.
+## 5. Kết quả thực tế trên 390 câu test
 
-`all_selection_lock.json` khóa sáu artifact lúc **13:28:48 UTC ngày 12/10/2026**,
-trước mọi lệnh test của lần mới; `test_predictions_computed=false` khi khóa.
-Không thay lựa chọn sau đọc test; hash artifact/lock được kiểm tra cuối lần chạy.
-
-## 4. Kết quả trên test nhãn AI đã dùng trước đó
-
-Cùng 390 mẫu, chưa có test mới/nhãn người độc lập. Macro theo đúng ba nhãn,
-undefined metric=0. Confusion matrix hàng nhãn AI/cột dự đoán,
-thứ tự positive/neutral/negative. Test không chọn tham số trong lần mới.
+Nguồn: outputs/part3_final_20261102/comparison_core.csv và evaluation/*/metrics.json.
 
 | Mô hình | Accuracy | Macro-Precision | Macro-Recall | Macro-F1 | Số sai |
 |---|---:|---:|---:|---:|---:|
-| BoW + NB | 0.694872 | 0.555395 | 0.535619 | 0.544067 | 119 |
-| TF-IDF word + NB | 0.723077 | 0.610838 | 0.446135 | 0.466176 | 108 |
-| BoW + SVM | 0.710256 | 0.561939 | 0.537563 | 0.547529 | 113 |
-| TF-IDF word + SVM | 0.717949 | 0.571906 | 0.515976 | 0.535355 | 110 |
-| Majority baseline | 0.694872 | 0.231624 | 0.333333 | 0.273323 | 119 |
-| TF-IDF word-char + SVM (bổ sung) | 0.707692 | 0.570426 | 0.558009 | 0.563401 | 114 |
+| BoW + NB | 0.715385 | 0.570452 | 0.476760 | 0.498018 | 111 |
+| TF-IDF + NB | 0.702564 | 0.457209 | 0.351427 | 0.310785 | 116 |
+| BoW + SVM | 0.705128 | 0.548639 | 0.513427 | 0.526752 | 115 |
+| TF-IDF + SVM | 0.717949 | 0.571906 | 0.515976 | 0.535355 | 110 |
 
-![Cùng 390 mẫu test nhãn AI](../outputs/part3_20261012_nv2_v2/comparison.png)
+![So sánh bốn mô hình](../outputs/part3_final_20261102/comparison_core.png)
+
+Baseline neutral: Accuracy=0.694872,
+Macro-F1=0.273323, F1 positive/negative=0.
+Test có 271/390 neutral (69,49%), nên Accuracy gần 70% chưa chứng minh phân loại tốt cả ba lớp.
 
 | Mô hình | Nhãn | Precision | Recall | F1 | Support |
 |---|---|---:|---:|---:|---:|
-| BoW + NB | positive | 0.4390 | 0.3600 | 0.3956 | 50 |
-| BoW + NB | neutral | 0.7943 | 0.8266 | 0.8101 | 271 |
-| BoW + NB | negative | 0.4328 | 0.4203 | 0.4265 | 69 |
-| TF-IDF word + NB | positive | 0.5385 | 0.1400 | 0.2222 | 50 |
-| TF-IDF word + NB | neutral | 0.7457 | 0.9520 | 0.8363 | 271 |
-| TF-IDF word + NB | negative | 0.5484 | 0.2464 | 0.3400 | 69 |
-| BoW + SVM | positive | 0.4359 | 0.3400 | 0.3820 | 50 |
-| BoW + SVM | neutral | 0.8105 | 0.8524 | 0.8309 | 271 |
-| BoW + SVM | negative | 0.4394 | 0.4203 | 0.4296 | 69 |
-| TF-IDF word + SVM | positive | 0.4545 | 0.3000 | 0.3614 | 50 |
-| TF-IDF word + SVM | neutral | 0.7895 | 0.8856 | 0.8348 | 271 |
-| TF-IDF word + SVM | negative | 0.4717 | 0.3623 | 0.4098 | 69 |
-| Majority baseline | positive | 0.0000 | 0.0000 | 0.0000 | 50 |
-| Majority baseline | neutral | 0.6949 | 1.0000 | 0.8200 | 271 |
-| Majority baseline | negative | 0.0000 | 0.0000 | 0.0000 | 69 |
-| TF-IDF word-char + SVM | positive | 0.4419 | 0.3800 | 0.4086 | 50 |
-| TF-IDF word-char + SVM | neutral | 0.8123 | 0.8303 | 0.8212 | 271 |
-| TF-IDF word-char + SVM | negative | 0.4571 | 0.4638 | 0.4604 | 69 |
+| BoW + NB | positive | 0.476190 | 0.200000 | 0.281690 | 50 |
+| BoW + NB | neutral | 0.767081 | 0.911439 | 0.833052 | 271 |
+| BoW + NB | negative | 0.468085 | 0.318841 | 0.379310 | 69 |
+| TF-IDF + NB | positive | 0.000000 | 0.000000 | 0.000000 | 50 |
+| TF-IDF + NB | neutral | 0.704961 | 0.996310 | 0.825688 | 271 |
+| TF-IDF + NB | negative | 0.666667 | 0.057971 | 0.106667 | 69 |
+| BoW + SVM | positive | 0.416667 | 0.300000 | 0.348837 | 50 |
+| BoW + SVM | neutral | 0.795918 | 0.863469 | 0.828319 | 271 |
+| BoW + SVM | negative | 0.433333 | 0.376812 | 0.403101 | 69 |
+| TF-IDF + SVM | positive | 0.454545 | 0.300000 | 0.361446 | 50 |
+| TF-IDF + SVM | neutral | 0.789474 | 0.885609 | 0.834783 | 271 |
+| TF-IDF + SVM | negative | 0.471698 | 0.362319 | 0.409836 | 69 |
 
-Trong bốn tổ hợp bắt buộc, BoW+SVM có Macro-F1 test cao nhất (0,547529), nhưng
-BoW+NB vẫn là lựa chọn theo validation. Nhánh bổ sung đứng đầu bảng sáu mô hình
-về Macro-F1 (0,563401), hơn TF-IDF word+SVM khoảng 0,0280;
-Accuracy thấp hơn (0,707692 so với 0,717949), recall hai lớp thiểu số cao hơn.
-TF-IDF+NB có Accuracy cao nhất (0,723077), song recall positive chỉ 0,14.
-Baseline Accuracy=0,694872 nhưng F1 positive/negative=0.
-Chưa kiểm định ý nghĩa thống kê; không kết luận thuật toán tốt nhất nói chung.
+TF-IDF + NB có recall positive=0, negative≈0,058 và neutral≈0,996.
+Giả thuyết cần kiểm tra: TF-IDF L2 làm giảm tổng trọng số đặc trưng và, với alpha đã chốt,
+prior/smoothing có thể chi phối hơn tín hiệu của các lớp ít mẫu. Kết quả không đủ chứng minh
+đây là nguyên nhân duy nhất; không điều chỉnh alpha theo test này.
 
-Confusion matrix của mô hình bổ sung:
+## 6. Confusion Matrix
 
-| Nhãn AI / dự đoán | positive | neutral | negative |
+Tất cả ma trận có **hàng là nhãn thật (AI), cột là nhãn dự đoán**,
+thứ tự positive/neutral/negative. Tổng hàng là support; tổng toàn ma trận là 390.
+
+### BoW + NB
+
+| Nhãn thật / dự đoán | positive | neutral | negative |
 |---|---:|---:|---:|
-| positive | 19 | 22 | 9 |
-| neutral | 17 | 225 | 29 |
-| negative | 7 | 30 | 32 |
+| positive | 10 | 32 | 8 |
+| neutral | 7 | 247 | 17 |
+| negative | 4 | 43 | 22 |
 
-![Confusion matrix của nhánh bổ sung](../outputs/part3_20261012_nv2_v2/evaluation/tfidf_svm_extended/confusion_matrix.png)
+![Confusion matrix BoW + NB](../outputs/part3_final_20261102/evaluation/bow_nb/confusion_matrix.png)
 
-## 5. Phân tích lỗi
+### TF-IDF + NB
 
-[25 trích đoạn sai đã ẩn danh](part3_error_analysis.md) bao phủ sáu hướng nhầm
-của BoW+NB; từng trích đoạn đã đối chiếu `errors.csv`.
-Có câu ngắn, viết tắt, phủ định gián tiếp, mỉa mai và trộn sắc thái;
-tách quan sát/giả thuyết, không sửa nhãn AI từ dự đoán.
-BoW+NB nhầm 24 positive và 34 negative thành neutral (58/119 lỗi).
+| Nhãn thật / dự đoán | positive | neutral | negative |
+|---|---:|---:|---:|
+| positive | 0 | 48 | 2 |
+| neutral | 1 | 270 | 0 |
+| negative | 0 | 65 | 4 |
 
-`error_groups.csv`/`errors_by_post.csv` mô tả nhóm lỗi/bài; nhóm tự động có giao nhau,
-không phải taxonomy nguyên nhân. Nhóm phủ định có 69 mẫu, BoW+NB sai 18,
-nhánh bổ sung sai 14; đây là mô tả test, không dùng để điều chỉnh tiếp.
-Mẫu định tính có chủ đích, không dùng 25 câu suy ra tỷ lệ nguyên nhân toàn dữ liệu.
+![Confusion matrix TF-IDF + NB](../outputs/part3_final_20261102/evaluation/tfidf_nb/confusion_matrix.png)
 
-## 6. Kiểm chứng và tái lập
+### BoW + SVM
 
-**67/67 tests đạt sau đợt hoàn thiện**; audit dữ liệu/NV2 và năm pipeline đã chọn đạt.
-Sáu mô hình tải lại giữ đúng 390 dự đoán và thứ tự ID/text/nhãn;
-metrics tính lại khớp, số errors khớp; CLI câu/CSV/câu rỗng/artifact thiếu đạt.
-CSV/manifest và hash lock giữ nguyên sau train/evaluate. Đã xem biểu đồ và confusion matrix.
-Phiên bản môi trường lưu trong metadata; chạy CPU, không huấn luyện PhoBERT.
+| Nhãn thật / dự đoán | positive | neutral | negative |
+|---|---:|---:|---:|
+| positive | 15 | 25 | 10 |
+| neutral | 13 | 234 | 24 |
+| negative | 8 | 35 | 26 |
 
-Lần chạy bị ngắt sau train rồi tiếp tục từ bước thành công, không train lại.
-`run_context.json` giữ snapshot ban đầu; `resume_context` ghi lúc tiếp tục;
-`commands.json` có lệnh/exit code/stdout/stderr/thời gian của cả hai đoạn.
-315,56 giây là tổng thời gian CLI đã ghi, không phải toàn phiên gồm khoảng gián đoạn.
-200,69 giây trong `verification.json` là đoạn runner tiếp tục, không phải tổng lần chạy.
+![Confusion matrix BoW + SVM](../outputs/part3_final_20261102/evaluation/bow_svm/confusion_matrix.png)
+
+### TF-IDF + SVM
+
+| Nhãn thật / dự đoán | positive | neutral | negative |
+|---|---:|---:|---:|
+| positive | 15 | 27 | 8 |
+| neutral | 11 | 240 | 20 |
+| negative | 7 | 37 | 25 |
+
+![Confusion matrix TF-IDF + SVM](../outputs/part3_final_20261102/evaluation/tfidf_svm/confusion_matrix.png)
+
+## 7. So sánh đặc trưng và thuật toán
+
+- Giữ NB: BoW có Macro-F1 cao hơn TF-IDF 0.187233;
+  cả hai chọn alpha=0.5, unigram. BoW + NB nhận diện hai lớp thiểu số tốt hơn trong bộ này.
+- Giữ SVM: TF-IDF cao hơn BoW 0.008603.
+  Hai mô hình chọn C khác nhau (1 so với 0.5), nên đây là so sánh hai pipeline được chọn
+  bằng validation, không phải thí nghiệm chỉ thay duy nhất biểu diễn.
+- Giữ BoW: SVM cao hơn NB 0.028735 về Macro-F1,
+  dù Accuracy thấp hơn. Giữ TF-IDF: SVM cao hơn NB 0.224570.
+- TF-IDF + SVM đứng đầu cả validation và test trong bốn mô hình của lần này; chưa
+  kiểm định ý nghĩa thống kê và không kết luận tốt nhất cho mọi dữ liệu.
+
+Mô hình chính nhầm positive→neutral 27 câu, negative→neutral 37 câu, tổng 64/110 lỗi
+(58,18%). Recall positive=0,30 và negative≈0,362 còn thấp dù Accuracy=0,718.
+Đây là quan sát phù hợp với vấn đề mất cân bằng; chưa tách được tác động riêng của
+phân bố nhãn, chất lượng nhãn AI và biểu diễn đặc trưng.
+
+## 8. Phân tích lỗi thật
+
+Đã đọc errors.csv của TF-IDF + SVM và chọn 25 trích đoạn thật bao phủ sáu hướng nhầm.
+Mỗi ví dụ có mã, nội dung, nhãn tham chiếu, nhãn dự đoán, quan sát và giả thuyết trong
+[phân tích lỗi](part3_error_analysis.md). File local error_examples.csv có thêm ID gốc
+để người 3 đối soát; ánh xạ/hash trong error_example_links_local.json không đưa vào gói công khai.
+Mẫu định tính có chủ đích, không đại diện cho tỷ lệ nguyên nhân của toàn bộ lỗi.
+Không viết lại nội dung gốc, đổi nhãn hoặc tuning sau phân tích.
+
+### Ba trường hợp tiêu biểu
+
+**E01 - “Vài câu đề k rõ ràng và bị lỗi testcase”**
+
+Nhãn tham chiếu AI: negative; dự đoán: neutral.
+Quan sát: Nêu đề không rõ và lỗi testcase, dùng viết tắt k.
+Giả thuyết cần kiểm tra: Từ viết tắt và từ nội dung kỹ thuật có thể làm tín hiệu chê yếu; cần xem trọng số mới xác nhận.
+
+**E10 - “đã vote 1 sao, xin cảm ơn.”**
+
+Nhãn tham chiếu AI: negative; dự đoán: positive.
+Quan sát: Có đánh giá 1 sao và lời cảm ơn trong cùng câu.
+Giả thuyết cần kiểm tra: Lời lịch sự có thể lấn tín hiệu chê; đây là giả thuyết về mỉa mai.
+
+**E24 - “Không gì là không thể e ạ”**
+
+Nhãn tham chiếu AI: positive; dự đoán: neutral.
+Quan sát: Động viên bằng hai phủ định.
+Giả thuyết cần kiểm tra: Unigram khó biểu diễn phủ định kép và ý khích lệ.
+
+## 9. Chạy demo bằng pipeline đã huấn luyện
+
+Đã chạy trực tiếp CLI cho cả bốn pipeline, gồm một file CSV ba câu minh họa
+và một bình luận nhập bằng --text cho mỗi model: tổng cộng 8 lệnh dự đoán.
+Đồng thời chạy lại evaluate trên cùng 390 mẫu test cho bốn model; toàn bộ 1.560
+dự đoán, các chỉ số, support và confusion matrix khớp lần đánh giá đã lưu.
+Hash dữ liệu, artifact, code NV2 và Excel review giữ nguyên; không huấn luyện lại.
+
+Các câu dưới đây do nhóm tự viết để minh họa thao tác, không phải dữ liệu test
+và không có nhãn chuẩn để tính Accuracy. Giữ nguyên dự đoán thực tế, không lựa
+chọn lại câu hoặc sửa output để tạo cảm giác mô hình luôn đúng.
+
+- **new-01:** “Thầy giải thích bài rất dễ hiểu, mình rất hài lòng.”
+- **new-02:** “Lịch thi được đăng vào thứ hai.”
+- **new-03:** “Cổng đăng ký lỗi mãi, mình rất thất vọng.”
+- **demo-04:** “Thầy giảng rất dễ hiểu.”
+
+| Mẫu | BoW + NB | TF-IDF + NB | BoW + SVM | TF-IDF + SVM |
+|---|---|---|---|---|
+| new-01 | negative | neutral | positive | negative |
+| new-02 | neutral | neutral | neutral | neutral |
+| new-03 | negative | neutral | positive | positive |
+| demo-04 | positive | neutral | negative | negative |
+
+Mẫu new-02 cho kết quả neutral ở cả bốn model. Mẫu new-01 có các cụm
+“rất dễ hiểu”, “rất hài lòng”, nhưng BoW + NB và TF-IDF + SVM dự đoán negative.
+Mẫu new-03 có “rất thất vọng”, song hai SVM dự đoán positive. Mẫu demo-04
+cũng cho dự đoán khác nhau giữa các thuật toán. Đây là những trường hợp cần
+thận trọng khi sử dụng, không phải bằng chứng demo thành công về ngữ nghĩa.
+
+Kết quả cho thấy việc chạy đúng pipeline không bảo đảm hiểu đúng mọi câu.
+Các mô hình học liên hệ thống kê từ bộ nhãn AI nhỏ và lệch lớp; việc giải thích
+chính xác từng dự đoán cần xem trọng số/đặc trưng và đánh giá bằng nhãn người.
+Chưa thực hiện can thiệp để xác định nguyên nhân riêng của từng trường hợp.
+Không điều chỉnh model sau khi đọc các câu demo này.
+
+Lệnh PowerShell tại thư mục gốc:
 
 ```powershell
-$python = ".\.venv\Scripts\python.exe"
-& $python scripts/run_part3.py --run-name part3_v2_rerun_01 --config configs/part3_v2.yaml --extended-config configs/part3_v2_extended.yaml
-& $python -m ptit_sentiment.predict --model artifacts/part3_20261012_nv2_v2/bow_nb.joblib --text "Mình chưa hài lòng với lịch học."
+.\.venv\Scripts\python.exe -m ptit_sentiment.predict `
+  --model artifacts/part3_final_20261102/tfidf_svm.joblib `
+  --text "Thầy giảng rất dễ hiểu."
 ```
 
-Chọn run-name/output mới. Artifact ở `artifacts/part3_20261012_nv2_v2/`, nhánh bổ sung
-ở `extended/`. Output ở `outputs/part3_20261012_nv2_v2/`: metrics.json,
-classification_report.csv, confusion_matrix.png, predictions.csv, errors.csv,
-error_groups.csv, errors_by_post.csv, comparison.csv/.png. Raw output giữ local.
-API/lệnh cho người 4: [bàn giao mới](../docs/part3_handoff.md).
+Bảng demo được lưu tại outputs/part3_final_20261102/demo/predictions.csv.
+Biên bản chạy, argv/stdout và đối soát test ở demo/verification.json;
+verified_test_metrics.csv chứa bảng chỉ số vừa kiểm chứng lại.
 
-## 7. Giới hạn và việc tiếp theo
+## 10. Kiểm chứng và bàn giao
 
-Nhãn AI, lệch neutral, một bộ chia; phát hiện gần trùng chỉ bảo vệ ràng buộc đã nhận diện.
-Test đã dùng, nhiều ứng viên chọn trên cùng validation có nguy cơ khớp riêng validation.
-Chưa có nhãn người độc lập/kiểm định thống kê; emoji map chưa có độ phủ phù hợp.
-Regex chưa che hết tên người nên ví dụ báo cáo được rà riêng.
+68 kiểm thử đã đạt trong đợt hoàn thiện code; lần tổng hợp báo cáo này chạy lại
+demo và đánh giá test, không tìm lại tham số hoặc huấn luyện lại.
+Các kiểm thử bao gồm kiểm tra giao dữ liệu, nguồn nhãn, pipeline chỉ fit train,
+lưu/tải, hội tụ SVM, hỗ trợ ba nhãn và xuất metric cho dự đoán PhoBERT độc lập artifact.
+Audit đối chiếu vocabulary/IDF từ train và giữ nguyên tham số khi transform heldout.
+Pipeline tải lại giữ nguyên toàn bộ dự đoán test; metrics tính lại, support, confusion
+matrix, errors.csv và ID/thứ tự/text đều khớp. CLI một câu/CSV, câu rỗng và artifact thiếu
+được kiểm tra thực tế. Hash dữ liệu, manifest, workbook review và code NV2 được bảo toàn.
 
-Phần người 3 đã có code, train/evaluate thật và tài liệu. Chưa tuyên bố toàn đề tài
-hoàn tất vì PhoBERT thuộc người 4 và nhãn người độc lập chưa có.
-Tiếp theo: người 4 fine-tune PhoBERT cùng bộ chia, khóa checkpoint bằng validation,
-dùng API đánh giá/metadata chung; nhóm chuẩn bị test mới mang nhãn người để xác nhận độc lập.
-Lý thuyết/tài liệu tham khảo phiên bản đã dùng ở [tài liệu học](../docs/part3_learning.md)
-và [hướng dẫn phương pháp](../docs/methodology.md).
+Artifact ở artifacts/part3_final_20261102/. Output ở outputs/part3_final_20261102/.
+Lệnh tái lập và sử dụng ở [README](../README.md); API/phiên bản test cho người 4 ở
+[bàn giao](../docs/part3_handoff.md); lý thuyết bảo vệ ở [tài liệu học](../docs/part3_learning.md).
+Không train lại lúc predict. PhoBERT chưa có kết quả trong lần này; chỉ ghép output thật
+trên đúng manifest/test khi người 4 cung cấp.
+
+## 11. Hạn chế và kết luận
+
+Đã hoàn thành phần người 3 trong điều kiện bộ bàn giao: bốn pipeline thật, lựa chọn
+validation, đánh giá test, baseline và phân tích lỗi có truy vết. Lưới nhỏ và một bộ chia
+chưa bao quát mọi tham số. Nhãn AI, test từng dùng, lệch lớp, câu thiếu ngữ cảnh, slang,
+phủ định và mỉa mai hạn chế diễn giải chất lượng. Cần test mới được người gán độc lập
+xác nhận để đánh giá khả năng khái quát. Không suy ra chất lượng toàn đề tài hoặc
+so sánh với PhoBERT khi chưa có thực nghiệm của người 4.
+
+## Tài liệu tham khảo
+
+Đã đối chiếu tài liệu chính thức scikit-learn 1.5.2 ngày 02/11/2026:
+
+1. [MultinomialNB](https://scikit-learn.org/1.5/modules/generated/sklearn.naive_bayes.MultinomialNB.html).
+2. [LinearSVC](https://scikit-learn.org/1.5/modules/generated/sklearn.svm.LinearSVC.html).
+3. [Pipeline](https://scikit-learn.org/1.5/modules/generated/sklearn.pipeline.Pipeline.html).
+4. [Precision, Recall, F-score và support](https://scikit-learn.org/1.5/modules/generated/sklearn.metrics.precision_recall_fscore_support.html).

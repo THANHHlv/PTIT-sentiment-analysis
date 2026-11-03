@@ -50,7 +50,7 @@ def run(run_name, config, splits_dir, extended_config=None, resume=False):
         print(f"Checked: {' '.join(map(str, arguments))}", flush=True)
     code_files = [*Path("src").rglob("*.py"), Path(config), Path("features.py"),
                   Path("scripts/review_part2.py"), Path("scripts/run_part3.py"),
-                  Path("scripts/audit_selected_features.py"), Path("scripts/restore_canonical_data.py")]
+                  Path("scripts/audit_selected_features.py")]
     if extended_config:
         code_files.append(Path(extended_config))
     context = {
@@ -171,7 +171,7 @@ def run(run_name, config, splits_dir, extended_config=None, resume=False):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-name", default="part3_" + datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S"))
-    parser.add_argument("--config", default="configs/part3_v2.yaml")
+    parser.add_argument("--config", default="configs/part3.yaml")
     parser.add_argument("--splits-dir", default="data/splits")
     parser.add_argument("--extended-config", help="Optional supplemental search; locked before all test evaluations")
     parser.add_argument("--resume", action="store_true", help="Continue an interrupted run without repeating completed CLI steps")
