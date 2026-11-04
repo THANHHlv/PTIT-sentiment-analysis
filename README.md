@@ -14,6 +14,18 @@ PhoBERT do người 4 thực hiện; chưa có điểm PhoBERT trong kết quả
 
 ## Cài đặt
 
+Repo GitHub giữ mã nguồn, cấu hình, tài liệu Markdown và fixture tổng hợp trong
+`tests/fixtures/`. Dữ liệu thật (`data/`, kể cả manifest chứa ID nguồn), model
+(`artifacts/`), kết quả chạy (`outputs/`), gói bàn giao (`handoff/`), bằng chứng
+sinh tự động (`report/evidence/`) và PDF/Word xuất báo cáo chỉ lưu nội bộ, được
+loại khỏi Git bằng `.gitignore`.
+
+Sau khi clone, nhận gói dữ liệu nội bộ từ thành viên phụ trách và khôi phục đúng
+`data/labeled/labeled_comments.csv`, `data/splits/train.csv`, `validation.csv`,
+`test.csv`, `manifest.json`. Giữ nguyên bộ chia và metadata; không tự chia lại.
+Các lệnh kiểm tra dữ liệu và huấn luyện bên dưới cần các file này. Model không
+kèm repo; dùng lệnh tái lập phần 3 để tạo artifact trước khi chạy demo dự đoán.
+
 Mở PowerShell tại gốc dự án; khuyến nghị Python 3.12 để khớp artifact.
 
 ~~~powershell

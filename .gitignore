@@ -3,22 +3,9 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
-# Mặc định bỏ qua dữ liệu phát sinh; chỉ theo dõi bộ hiện hành bên dưới.
-/data/*
-!/data/labeled/
-!/data/splits/
-data/labeled/*
-data/splits/*
-!**/.gitkeep
-
-# Bộ labeled hiện hành; không thêm dữ liệu thô hoặc hồ sơ nhận diện.
-!data/labeled/labeled_comments.csv
-
-# Bộ chia dùng chung và metadata cần thiết để kiểm tra/tái lập.
-!data/splits/train.csv
-!data/splits/validation.csv
-!data/splits/test.csv
-!data/splits/manifest.json
+# Dữ liệu thật và manifest chứa ID nguồn chỉ lưu nội bộ.
+# Fixture tổng hợp trong tests/fixtures/ vẫn được theo dõi.
+/data/
 
 artifacts/*
 outputs/*
@@ -28,6 +15,7 @@ tools/vncorenlp/
 .cache/
 .env
 .env.*
+!.env.example
 *.safetensors
 *.pt
 *.pth
@@ -50,3 +38,29 @@ storage_state*.json
 
 # Bằng chứng sinh lại từ kết quả thực nghiệm.
 /report/evidence/
+/report/*.pdf
+/report/*.docx
+
+# Môi trường, công cụ IDE và file tạm trên máy cá nhân.
+/venv/
+/env/
+/.vscode/
+/.idea/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+build/
+dist/
+.ipynb_checkpoints/
+*.tmp
+*.temp
+*.bak
+*.swp
+~$*
+.DS_Store
+Thumbs.db
+Desktop.ini
