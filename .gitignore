@@ -3,35 +3,9 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
-# Mặc định bỏ qua dữ liệu phát sinh; chỉ theo dõi bộ hiện hành bên dưới.
-/data/*
-!/data/README.md
-!/data/examples/
-!/data/raw/
-!/data/labeled/
-!/data/splits/
-data/raw/*
-data/labeled/*
-data/splits/*
-!**/.gitkeep
-!data/labeled/template.csv
-
-# Dữ liệu đã gán nhãn và đối soát hiện hành được phép đưa lên GitHub.
-!data/labeled/labeled_comments.csv
-!data/labeled/ai_labeling_report.json
-!data/labeled/unresolved.csv
-!data/labeled/excluded_comments.csv
-!data/labeled/id_reconciliation.csv
-
-# Bộ chia dùng chung và metadata cần thiết để kiểm tra/tái lập.
-!data/splits/train.csv
-!data/splits/validation.csv
-!data/splits/test.csv
-!data/splits/manifest.json
-!data/splits/metadata.json
-!data/splits/labeling_report.json
-!data/splits/split_groups.csv
-!data/splits/near_duplicate_constraints.csv
+# Dữ liệu thật và manifest chứa ID nguồn chỉ lưu nội bộ.
+# Fixture tổng hợp trong tests/fixtures/ vẫn được theo dõi.
+/data/
 
 artifacts/*
 outputs/*
@@ -41,6 +15,7 @@ tools/vncorenlp/
 .cache/
 .env
 .env.*
+!.env.example
 *.safetensors
 *.pt
 *.pth
@@ -61,8 +36,31 @@ tools/vncorenlp/
 cookies*.json
 storage_state*.json
 
-# Ban cu chua co xac nhan nguoi; giu local de truy vet.
-/scripts/auto_annotate_workflow.py
-/scripts/create_resolutions.py
-/report/report.md
+# Bằng chứng sinh lại từ kết quả thực nghiệm.
 /report/evidence/
+/report/*.pdf
+/report/*.docx
+
+# Môi trường, công cụ IDE và file tạm trên máy cá nhân.
+/venv/
+/env/
+/.vscode/
+/.idea/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+build/
+dist/
+.ipynb_checkpoints/
+*.tmp
+*.temp
+*.bak
+*.swp
+~$*
+.DS_Store
+Thumbs.db
+Desktop.ini

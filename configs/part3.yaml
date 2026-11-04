@@ -1,0 +1,27 @@
+# Current member-3 scope: four word-feature pipelines, fixed before test evaluation.
+preprocessing:
+  lowercase: true
+  replace_urls: true
+  expand_slang: true
+  mask_sensitive: true
+  slang_map: {ko: "không", khum: "không", hok: "không"}
+  emoji: keep
+  stop_words: []
+  tokenizer: underthesea
+vectorizer:
+  min_df: 1
+  max_df: 1.0
+  max_features: 20000
+grid:
+  ngram_range: [[1, 1], [1, 2]]
+  nb_alpha: [0.5, 1.0]
+  svm_c: [0.5, 1.0]
+  emoji: [keep]
+  svm_class_weight: [null]
+  tfidf_mode: [word]
+  sublinear_tf: [false]
+svm:
+  max_iter: 10000
+  retry_max_iter: 100000
+  tol: 0.0001
+seed: 42

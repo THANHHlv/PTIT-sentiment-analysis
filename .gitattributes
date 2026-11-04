@@ -1,0 +1,5 @@
+# Preserve canonical CSV bytes (including line breaks inside quoted comments).
+/data/labeled/labeled_comments.csv -text
+/data/splits/train.csv -text
+/data/splits/validation.csv -text
+/data/splits/test.csv -text

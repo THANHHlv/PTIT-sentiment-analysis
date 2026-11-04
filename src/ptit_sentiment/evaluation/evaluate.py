@@ -1,6 +1,8 @@
 """Đánh giá artifact; lệnh riêng, không huấn luyện/chọn tham số."""
 import argparse
+from datetime import datetime, timezone
 from pathlib import Path
+from time import perf_counter
 
 from ptit_sentiment.common import file_hash, run_cli
 from ptit_sentiment.data.split import load_split_set
@@ -15,6 +17,7 @@ def evaluate_model(model_path, splits_dir, output_dir, split="test", segmenter_d
     if metadata["split_manifest_sha256"] != split_hash:
         raise ValueError("Bộ chia đánh giá khác bộ chia lúc train. Dùng chung manifest cho mọi mô hình.")
     frame = frames[split]
+    clock = perf_counter()
     predictions = predict_with_artifact(model, metadata, frame)
     return export_evaluation(output_dir, predictions, {
         "model_name": metadata["model_name"], "split": split,
@@ -22,6 +25,14 @@ def evaluate_model(model_path, splits_dir, output_dir, split="test", segmenter_d
         "evaluation_data_sha256": file_hash(Path(splits_dir) / f"{split}.csv"),
         "artifact": str(Path(model_path).resolve()),
         "truncation": getattr(model, "truncation_stats", None),
+        "prediction_seconds": perf_counter() - clock,
+        "evaluated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "dataset_version": manifest.get("dataset_version"),
+        "labeling_policy": manifest.get("labeling_policy"),
+        "label_source_counts": manifest.get("label_source_counts"),
+        "annotation_status_counts": manifest.get("annotation_status_counts"),
+        "human_labels_confirmed": manifest.get("human_labels_confirmed", False),
+        "training_metadata": metadata,
     })
 
 
