@@ -1,0 +1,34 @@
+sentiment-analysis/
+│
+├── data/
+│   ├── train.csv
+│   ├── validation.csv
+│   └── test.csv
+│
+├── models/
+│   ├── phobert/
+│   │   ├── config.json
+│   │   ├── model.safetensors
+│   │   ├── tokenizer_config.json
+│   │   └── ...
+│   │
+│   └── classical/
+│       ├── bow_nb.pkl
+│       ├── tfidf_nb.pkl
+│       ├── bow_svm.pkl
+│       └── tfidf_svm.pkl
+│
+├── src/
+│   ├── preprocess.py
+│   ├── features.py
+│   ├── train_phobert.py
+│   ├── evaluate.py
+│   └── predict.py
+│
+├── results/
+│   ├── phobert_metrics.json
+│   ├── confusion_matrix.png
+│   └── predictions.csv
+│
+├── requirements.txt
+└── README.md

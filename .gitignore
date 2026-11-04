@@ -1,8 +1,10 @@
+```gitignore
 .venv/
 __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
+
 # Dữ liệu thật và manifest chứa ID nguồn chỉ lưu nội bộ.
 # Fixture tổng hợp trong tests/fixtures/ vẫn được theo dõi.
 /data/
@@ -11,17 +13,21 @@ artifacts/*
 outputs/*
 !artifacts/.gitkeep
 !outputs/.gitkeep
+
 tools/vncorenlp/
 .cache/
+
 .env
 .env.*
 !.env.example
+
 *.safetensors
 *.pt
 *.pth
 *.joblib
 *.bin
 *.log
+
 /handoff/
 *.zip
 *.7z
@@ -64,3 +70,4 @@ dist/
 .DS_Store
 Thumbs.db
 Desktop.ini
+```

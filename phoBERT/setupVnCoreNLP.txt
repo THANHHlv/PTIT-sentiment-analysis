@@ -1,0 +1,6 @@
+cd C:\NLP\PhoBERT\PTIT-sentiment-analysis
+New-Item -ItemType Directory -Force .\artifacts\vncorenlp\models\wordsegmenter
+curl.exe -L "https://raw.githubusercontent.com/vncorenlp/VnCoreNLP/master/VnCoreNLP-1.2.jar" -o ".\artifacts\vncorenlp\VnCoreNLP-1.2.jar"
+curl.exe -L "https://raw.githubusercontent.com/vncorenlp/VnCoreNLP/master/models/wordsegmenter/vi-vocab" -o ".\artifacts\vncorenlp\models\wordsegmenter\vi-vocab"
+curl.exe -L "https://raw.githubusercontent.com/vncorenlp/VnCoreNLP/master/models/wordsegmenter/wordsegmenter.rdr" -o ".\artifacts\vncorenlp\models\wordsegmenter\wordsegmenter.rdr"
+tree .\artifacts\vncorenlp /F
